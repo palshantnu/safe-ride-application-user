@@ -1,0 +1,10 @@
+export const getAuthToken = (state) => state.auth.token;
+export const getUserData = (state) => state.auth.user;
+export const getIsAuthenticated = (state) => state.auth.isAuthenticated;
+export const getAuthLoading = (state) => state.auth.isLoading;
+export const getAuthError = (state) => state.auth.error;
+export const getAppLanguage = (state) => state.common.appLanguage;
+export const getTheme = (state) => state.common.theme;
+export const getCurrentRide = (state) => state.ride.currentRide;
+export const getRideHistory = (state) => state.ride.rideHistory;
+export const getRideLoading = (state) => state.ride.isLoading;

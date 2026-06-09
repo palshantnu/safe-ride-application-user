@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /Users/apple/Desktop/shantnu/shantnu/saferide_driver/src -type f \\\\\\( -name \"*.tsx\" -o -name \"*.js\" \\\\\\) | xargs grep -l \"incity\\\\|in_city\\\\|isIncity\\\\|InCity\" 2>/dev/null | head -10)",
+      "Read(//Users/apple/Desktop/shantnu/shantnu/saferide_driver/src/**)",
+      "Bash(node --input-type=module)",
+      "Bash(npx react-native *)",
+      "Bash(node -e ' *)"
+    ]
+  }
+}
