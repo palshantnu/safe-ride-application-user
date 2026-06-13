@@ -536,7 +536,7 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
                       isRental && styles.inputDisabled,
                       dropCity && !isRental ? styles.inputTextSelected : styles.inputTextPlaceholder
                     ]}>
-                      {dropCity || (isRental ? 'Same as Pickup City' : 'Select Drop City')}
+                      {dropCity || (isRental ? 'Drop City' : 'Select Drop City')}
                     </Text>
                     {!isRental && <Icon name="chevron-down-outline" size={18} color="#999" />}
                   </TouchableOpacity>
