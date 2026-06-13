@@ -25,6 +25,9 @@ import SelfSharingSearchScreen from '../screens/mainscreens/SelfSharingSearchScr
 import AvailableTripsScreen from '../screens/mainscreens/AvailableTripsScreen';
 import SelfSharingBookingScreen from '../screens/mainscreens/SelfSharingBookingScreen';
 import MyBookingsScreen from '../screens/mainscreens/MyBookingsScreen';
+import ParcelMyParcelsHistoryScreen from '../screens/mainscreens/ParcelMyParcelsHistoryScreen';
+import ParcelVehicleSelectionScreen from '../screens/mainscreens/ParcelVehicleSelectionScreen';
+
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -168,6 +171,13 @@ const AppNavigator = () => {
               }}
             />
             <Stack.Screen
+              name="ParcelVehicleSelection"
+              component={ParcelVehicleSelectionScreen}
+              options={{
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
               name="InCity"
               component={InCityScreen}
               options={{ headerShown: false }}
@@ -223,6 +233,12 @@ const AppNavigator = () => {
               component={MyBookingsScreen}
               options={{ headerShown: false }}
             />
+            <Stack.Screen
+              name="MyParcels"
+              component={ParcelMyParcelsHistoryScreen}
+              options={{ headerShown: false }}
+            />
+
           </>
         ) : (
           // User is not authenticated - show Auth screens

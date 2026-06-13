@@ -792,9 +792,18 @@ const HomeScreen = ({ navigation }) => {
     }
 
     // Handle Self Sharing and Inter city services
-    const selfSharingServices = ['Self Sharing', 'Intercity sharing car'];
+    const selfSharingServices = ['Self Sharing', 'Inter city'];
     if (selfSharingServices.includes(service?.title)) {
       navigation.navigate('SelfSharingSearch', {
+        service_id: service.id,
+        service_title: service.title,
+      });
+      return;
+    }
+
+    // Parcel services
+    if (service?.title?.toLowerCase()?.includes('parcel')) {
+      navigation.navigate('ParcelVehicleSelection', {
         service_id: service.id,
         service_title: service.title,
       });

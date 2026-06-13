@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,11 +17,16 @@ import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useDispatch } from 'react-redux';
 import { GET_AVAILABLE_TRIPS } from '../../redux/actions/action-creator';
+import axios from 'axios';
+
+const API_BASE_URL = 'http://91.108.104.79:3000';
 
 const SelfSharingSearchScreen = ({ navigation, route }) => {
   const { service_title, service_id } = route.params;
   const [fromCity, setFromCity] = useState('');
+  const [fromCityId, setFromCityId] = useState(null);
   const [toCity, setToCity] = useState('');
+  const [toCityId, setToCityId] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -29,27 +34,48 @@ const SelfSharingSearchScreen = ({ navigation, route }) => {
   const [cityType, setCityType] = useState(''); // 'from' or 'to'
   const [citySearch, setCitySearch] = useState('');
   
+  // Cities data from API
+  const [cities, setCities] = useState([]);
+  const [filteredCities, setFilteredCities] = useState([]);
+  const [citiesLoading, setCitiesLoading] = useState(false);
+  
   const dispatch = useDispatch();
 
-  const popularCities = [
-    'Jaipur',
-    'Delhi',
-    'Mumbai',
-    'Bangalore',
-    'Hyderabad',
-    'Pune',
-    'Chennai',
-    'Kolkata',
-    'Ahmedabad',
-    'Lucknow',
-    'Chandigarh',
-    'Indore',
-    'Gwalior',
-  ];
+  // Fetch cities on component mount
+  useEffect(() => {
+    fetchCities();
+  }, []);
 
-  const filteredCities = popularCities.filter(city =>
-    city.toLowerCase().includes(citySearch.toLowerCase())
-  );
+  // Filter cities based on search text
+  useEffect(() => {
+    if (citySearch.trim() === '') {
+      setFilteredCities(cities);
+    } else {
+      const filtered = cities.filter(city =>
+        city.name.toLowerCase().includes(citySearch.toLowerCase())
+      );
+      setFilteredCities(filtered);
+    }
+  }, [citySearch, cities]);
+
+  // Fetch cities from API
+  const fetchCities = async () => {
+    setCitiesLoading(true);
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/cities`);
+      if (response.data?.status && response.data?.data) {
+        setCities(response.data.data);
+        setFilteredCities(response.data.data);
+      } else {
+        console.error('Failed to fetch cities:', response.data?.message);
+      }
+    } catch (error) {
+      console.error('Error fetching cities:', error);
+      Alert.alert('Error', 'Failed to load cities. Please check your internet connection.');
+    } finally {
+      setCitiesLoading(false);
+    }
+  };
 
   const handleDateChange = (event, date) => {
     if (event.type === 'dismissed') {
@@ -64,9 +90,11 @@ const SelfSharingSearchScreen = ({ navigation, route }) => {
 
   const handleCitySelect = (city) => {
     if (cityType === 'from') {
-      setFromCity(city);
+      setFromCity(city.name);
+      setFromCityId(city.id);
     } else {
-      setToCity(city);
+      setToCity(city.name);
+      setToCityId(city.id);
     }
     setShowCityModal(false);
     setCitySearch('');
@@ -102,7 +130,9 @@ const SelfSharingSearchScreen = ({ navigation, route }) => {
         navigation.navigate('AvailableTrips', {
           trips: res.data,
           fromCity,
+          fromCityId,
           toCity,
+          toCityId,
           date: formattedDate,
           service_title,
           service_id,
@@ -121,8 +151,11 @@ const SelfSharingSearchScreen = ({ navigation, route }) => {
 
   const handleSwapCities = () => {
     const temp = fromCity;
+    const tempId = fromCityId;
     setFromCity(toCity);
+    setFromCityId(toCityId);
     setToCity(temp);
+    setToCityId(tempId);
   };
 
   const formatDate = (date) => {
@@ -133,8 +166,6 @@ const SelfSharingSearchScreen = ({ navigation, route }) => {
       weekday: 'short',
     });
   };
-
-  const isMinDate = selectedDate.toDateString() === new Date().toDateString();
 
   return (
     <View style={styles.container}>
@@ -180,18 +211,19 @@ const SelfSharingSearchScreen = ({ navigation, route }) => {
               }}
             >
               <Icon name="map-pin" size={18} color="#FF1493" />
-              <TextInput
-                style={styles.inputText}
-                placeholder="Select from city"
-                placeholderTextColor="#999"
-                value={fromCity}
-                editable={false}
-              />
+              <Text style={[styles.inputText, fromCity ? styles.inputTextSelected : styles.inputTextPlaceholder]}>
+                {fromCity || 'Select from city'}
+              </Text>
               {fromCity ? (
-                <TouchableOpacity onPress={() => setFromCity('')}>
+                <TouchableOpacity onPress={() => {
+                  setFromCity('');
+                  setFromCityId(null);
+                }}>
                   <Icon name="x" size={18} color="#666" />
                 </TouchableOpacity>
-              ) : null}
+              ) : (
+                <Icon name="chevron-down" size={18} color="#999" />
+              )}
             </TouchableOpacity>
           </View>
 
@@ -214,18 +246,19 @@ const SelfSharingSearchScreen = ({ navigation, route }) => {
               }}
             >
               <Icon name="map-pin" size={18} color="#FF1493" />
-              <TextInput
-                style={styles.inputText}
-                placeholder="Select to city"
-                placeholderTextColor="#999"
-                value={toCity}
-                editable={false}
-              />
+              <Text style={[styles.inputText, toCity ? styles.inputTextSelected : styles.inputTextPlaceholder]}>
+                {toCity || 'Select to city'}
+              </Text>
               {toCity ? (
-                <TouchableOpacity onPress={() => setToCity('')}>
+                <TouchableOpacity onPress={() => {
+                  setToCity('');
+                  setToCityId(null);
+                }}>
                   <Icon name="x" size={18} color="#666" />
                 </TouchableOpacity>
-              ) : null}
+              ) : (
+                <Icon name="chevron-down" size={18} color="#999" />
+              )}
             </TouchableOpacity>
           </View>
 
@@ -323,26 +356,51 @@ const SelfSharingSearchScreen = ({ navigation, route }) => {
             <View style={{ width: 28 }} />
           </View>
 
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search cities..."
-            placeholderTextColor="#999"
-            value={citySearch}
-            onChangeText={setCitySearch}
-          />
-
-          <ScrollView style={styles.citiesList} showsVerticalScrollIndicator={false}>
-            {filteredCities.map((city, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.cityItem}
-                onPress={() => handleCitySelect(city)}
-              >
-                <Icon name="map-pin" size={18} color="#FF1493" />
-                <Text style={styles.cityName}>{city}</Text>
+          <View style={styles.searchContainer}>
+            <Icon name="search" size={20} color="#999" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search cities..."
+              placeholderTextColor="#999"
+              value={citySearch}
+              onChangeText={setCitySearch}
+              autoFocus={true}
+            />
+            {citySearch !== '' && (
+              <TouchableOpacity onPress={() => setCitySearch('')}>
+                <Icon name="x" size={20} color="#999" />
               </TouchableOpacity>
-            ))}
-          </ScrollView>
+            )}
+          </View>
+
+          {citiesLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#FF1493" />
+              <Text style={styles.loadingText}>Loading cities...</Text>
+            </View>
+          ) : filteredCities.length > 0 ? (
+            <ScrollView style={styles.citiesList} showsVerticalScrollIndicator={false}>
+              {filteredCities.map((city) => (
+                <TouchableOpacity
+                  key={city.id}
+                  style={styles.cityItem}
+                  onPress={() => handleCitySelect(city)}
+                >
+                  <Icon name="map-pin" size={18} color="#FF1493" />
+                  <View style={styles.cityTextContainer}>
+                    <Text style={styles.cityName}>{city.name}</Text>
+                    <Text style={styles.stateName}>{city.state_name}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={styles.noResultsContainer}>
+              <Icon name="search" size={48} color="#ccc" />
+              <Text style={styles.noResultsText}>No cities found</Text>
+              <Text style={styles.noResultsSubtext}>Try searching with a different name</Text>
+            </View>
+          )}
         </View>
       </Modal>
     </View>
@@ -439,7 +497,12 @@ const styles = StyleSheet.create({
   inputText: {
     flex: 1,
     fontSize: 14,
+  },
+  inputTextSelected: {
     color: '#333',
+  },
+  inputTextPlaceholder: {
+    color: '#999',
   },
   dateText: {
     flex: 1,
@@ -518,16 +581,25 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
   },
-  searchInput: {
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginHorizontal: 15,
     marginVertical: 12,
+    paddingHorizontal: 12,
     backgroundColor: '#f9f9f9',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#333',
   },
   citiesList: {
     flex: 1,
@@ -542,10 +614,46 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f0f0f0',
     gap: 12,
   },
+  cityTextContainer: {
+    flex: 1,
+  },
   cityName: {
     fontSize: 14,
     color: '#333',
+    fontWeight: '500',
+  },
+  stateName: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 2,
+  },
+  loadingContainer: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#666',
+  },
+  noResultsContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  noResultsText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#666',
+    marginTop: 16,
+  },
+  noResultsSubtext: {
+    fontSize: 14,
+    color: '#999',
+    marginTop: 8,
   },
 });
 

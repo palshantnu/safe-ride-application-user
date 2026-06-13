@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -22,26 +22,23 @@ import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import LinearGradient from 'react-native-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import axios from 'axios';
+
+import CurvedHeader from '../../components/CurvedHeader';
 import {
   CREATE_BOOKING,
   GET_PLANS,
   GET_SUB_SERVICES,
   CLEAR_BOOKING_DATA,
+  CREATE_BOOKING_PARCEL,
 } from '../../redux/actions/action-creator';
-import { IMAGE_URL } from '../../axios/axiosinstance';
-import CurvedHeader from '../../components/CurvedHeader';
-import axios from 'axios';
 
 const { width } = Dimensions.get('window');
-
 const API_BASE_URL = 'http://91.108.104.79:3000';
 
-const VehicleSelectionScreen = ({ route, navigation }) => {
-  const { service_id, service_title } = route.params;
+const ParcelVehicleSelectionScreen = ({ route, navigation }) => {
+  const { service_id } = route.params;
 
-  console.log('service_id', service_title);
-
-  const isRental = service_title?.toLowerCase() === 'rental' || service_title === 'Driver';
   const dispatch = useDispatch();
 
   const {
@@ -54,7 +51,7 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
     bookingError,
   } = useSelector((state) => state.common);
 
-  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [selectedSubService, setSelectedSubService] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
 
   // City data and selection states
@@ -63,24 +60,57 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
   const [citiesLoading, setCitiesLoading] = useState(false);
   const [citiesModalVisible, setCitiesModalVisible] = useState(false);
   const [citySearchText, setCitySearchText] = useState('');
-  const [activeCityField, setActiveCityField] = useState(null); // 'pickup', 'drop', 'to'
+  const [activeCityField, setActiveCityField] = useState(null); // 'pickup' or 'drop'
 
+  // form
   const [pickupCity, setPickupCity] = useState('');
   const [pickupCityId, setPickupCityId] = useState(null);
   const [dropCity, setDropCity] = useState('');
   const [dropCityId, setDropCityId] = useState(null);
-  const [toCity, setToCity] = useState('');
-  const [toCityId, setToCityId] = useState(null);
-
-  const [person, setPerson] = useState(1);
-  const [scheduleDate, setScheduleDate] = useState(new Date());
+  const [pickupDate, setPickupDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [pickupTime, setPickupTime] = useState(new Date());
+
+  const [pickupAddress, setPickupAddress] = useState('');
+  const [pickupLandmark, setPickupLandmark] = useState('');
+  const [dropAddress, setDropAddress] = useState('');
+  const [dropLandmark, setDropLandmark] = useState('');
+
+  const [receiverName, setReceiverName] = useState('');
+  const [receiverMobile, setReceiverMobile] = useState('');
+  const [approxWeight, setApproxWeight] = useState('');
+
+  const packagingMaterialTypes = useMemo(
+    () => ['Plastic', 'Paper', 'Carton', 'Glass', 'Iron'],
+    [],
+  );
+  const loadingUnloadingTypes = useMemo(
+    () => ['User End', 'Captain End'],
+    [],
+  );
+
+  const [packagingMaterialType, setPackagingMaterialType] = useState('Carton');
+  const [loadingUnloading, setLoadingUnloading] = useState('Captain End');
+
+  const [remarks, setRemarks] = useState('');
 
   // Fetch cities on component mount
   useEffect(() => {
     fetchCities();
   }, []);
+
+  // Filter cities based on search text
+  useEffect(() => {
+    if (citySearchText.trim() === '') {
+      setFilteredCities(cities);
+    } else {
+      const filtered = cities.filter(city =>
+        city.name.toLowerCase().includes(citySearchText.toLowerCase())
+      );
+      setFilteredCities(filtered);
+    }
+  }, [citySearchText, cities]);
 
   // Fetch cities from API
   const fetchCities = async () => {
@@ -101,18 +131,6 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
     }
   };
 
-  // Filter cities based on search text
-  useEffect(() => {
-    if (citySearchText.trim() === '') {
-      setFilteredCities(cities);
-    } else {
-      const filtered = cities.filter(city =>
-        city.name.toLowerCase().includes(citySearchText.toLowerCase())
-      );
-      setFilteredCities(filtered);
-    }
-  }, [citySearchText, cities]);
-
   // Open city selection modal
   const openCitySelector = (fieldType) => {
     setActiveCityField(fieldType);
@@ -123,37 +141,15 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
 
   // Handle city selection
   const handleCitySelect = (city) => {
-    switch (activeCityField) {
-      case 'pickup':
-        setPickupCity(city.name);
-        setPickupCityId(city.id);
-        if (isRental) {
-          // For rental, set drop city same as pickup initially
-          setDropCity(city.name);
-          setDropCityId(city.id);
-        }
-        break;
-      case 'drop':
-        setDropCity(city.name);
-        setDropCityId(city.id);
-        break;
-      case 'to':
-        setToCity(city.name);
-        setToCityId(city.id);
-        break;
-      default:
-        break;
+    if (activeCityField === 'pickup') {
+      setPickupCity(city.name);
+      setPickupCityId(city.id);
+    } else if (activeCityField === 'drop') {
+      setDropCity(city.name);
+      setDropCityId(city.id);
     }
     setCitiesModalVisible(false);
     setActiveCityField(null);
-  };
-
-  const handlePickupCityChange = (text) => {
-    // For manual input, we don't have city ID
-    setPickupCity(text);
-    if (isRental) {
-      setDropCity(text);
-    }
   };
 
   useEffect(() => {
@@ -165,7 +161,7 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
 
   useEffect(() => {
     if (bookingSuccess) {
-      Alert.alert('Success', 'Booking created successfully!', [
+      Alert.alert('Success', 'Parcel booking created successfully!', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     }
@@ -177,65 +173,77 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
     }
   }, [bookingError]);
 
-  const handleVehicleSelect = (vehicle) => {
-    console.log('vehicle-->', vehicle);
-    setSelectedVehicle(vehicle);
-    setSelectedPlan(null);
-    dispatch(GET_PLANS(service_id, vehicle.id));
+  const myParcelsButton = (
+    <TouchableOpacity
+      style={styles.myParcelsBtn}
+      onPress={() => {
+        navigation.navigate('MyParcels');
+      }}
+      activeOpacity={0.9}
+    >
+      <Icon name="cube-outline" size={18} color="#fff" />
+      <Text style={styles.myParcelsText}>My Parcels</Text>
+    </TouchableOpacity>
+  );
+
+  const formatDateOnly = (d) => {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
   };
 
-  const formatDateTime = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-  };
-
-  const handleDateChange = (event, selectedDate) => {
-    setShowDatePicker(false);
-    if (selectedDate) {
-      const newDate = new Date(selectedDate);
-      newDate.setHours(scheduleDate.getHours());
-      newDate.setMinutes(scheduleDate.getMinutes());
-      setScheduleDate(newDate);
-    }
-  };
-
-  const handleTimeChange = (event, selectedTime) => {
-    setShowTimePicker(false);
-    if (selectedTime) {
-      const newDate = new Date(scheduleDate);
-      newDate.setHours(selectedTime.getHours());
-      newDate.setMinutes(selectedTime.getMinutes());
-      setScheduleDate(newDate);
-    }
+  const formatTimeOnly = (d) => {
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mi = String(d.getMinutes()).padStart(2, '0');
+    const ss = '00';
+    return `${hh}:${mi}:${ss}`;
   };
 
   const validateForm = () => {
-    if (!selectedVehicle) {
-      Alert.alert('Validation Error', 'Please select a vehicle');
+    if (!selectedSubService) {
+      Alert.alert('Validation Error', 'Please select a parcel type');
       return false;
     }
     if (!pickupCity.trim()) {
-      Alert.alert('Validation Error', 'Please enter pickup city');
+      Alert.alert('Validation Error', 'Please select pickup city');
+      return false;
+    }
+    if (!pickupAddress.trim()) {
+      Alert.alert('Validation Error', 'Please enter pickup address');
       return false;
     }
     if (!dropCity.trim()) {
-      Alert.alert('Validation Error', 'Please enter drop city');
+      Alert.alert('Validation Error', 'Please select drop city');
+      return false;
+    }
+    if (!dropAddress.trim()) {
+      Alert.alert('Validation Error', 'Please enter drop address');
+      return false;
+    }
+    if (!receiverName.trim()) {
+      Alert.alert('Validation Error', 'Please enter receiver name');
+      return false;
+    }
+    if (!receiverMobile.trim() || receiverMobile.trim().length < 10) {
+      Alert.alert('Validation Error', 'Please enter valid receiver mobile');
+      return false;
+    }
+    if (!approxWeight.trim() || Number.isNaN(Number(approxWeight))) {
+      Alert.alert('Validation Error', 'Please enter valid approx weight');
       return false;
     }
     if (!selectedPlan) {
       Alert.alert('Validation Error', 'Please select a plan');
       return false;
     }
-    if (person < 1) {
-      Alert.alert('Validation Error', 'Please enter valid number of persons');
-      return false;
-    }
     return true;
+  };
+
+  const handleSubServiceSelect = (item) => {
+    setSelectedSubService(item);
+    setSelectedPlan(null);
+    dispatch(GET_PLANS(service_id, item.id));
   };
 
   const handleSubmitBooking = () => {
@@ -243,37 +251,40 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
 
     const bookingData = {
       service_id,
-      sub_service_id: selectedVehicle.id,
-      pickup_city: pickupCity,
-      drop_city: dropCity,
-      to_city: toCity,
-      person,
+      sub_service_id: selectedSubService.id,
       plan_id: selectedPlan.id,
-      schedule_date: formatDateTime(scheduleDate),
+
+      pickup_city: pickupCity,
+      pickup_city_id: pickupCityId,
+      pickup_date: formatDateOnly(pickupDate),
+      pickup_time: formatTimeOnly(pickupTime),
+      pickup_address: pickupAddress,
+      pickup_landmark: pickupLandmark,
+
+      drop_city: dropCity,
+      drop_city_id: dropCityId,
+      drop_address: dropAddress,
+      drop_landmark: dropLandmark,
+
+      receiver_name: receiverName,
+      receiver_mobile: receiverMobile,
+
+      approx_weight: Number(approxWeight),
+
+      packaging_material_type: packagingMaterialType,
+      loading_unloading: loadingUnloading,
+
+      remarks,
     };
-    console.log('bookingData-->', bookingData);
-    dispatch(CREATE_BOOKING(bookingData));
+
+    dispatch(CREATE_BOOKING_PARCEL(bookingData));
   };
 
-  const getVehicleIcon = (title) => {
-    const t = title?.toLowerCase() || '';
-    if (t.includes('scooter')) return 'bicycle-outline';
-    if (t.includes('bike')) return 'bicycle-outline';
-    if (t.includes('auto')) return 'car-sport-outline';
-    return 'car-outline';
-  };
-
-  // Group cities by state for better display
-  const getGroupedCities = () => {
-    const grouped = {};
-    filteredCities.forEach(city => {
-      const stateKey = city.state_name || 'Other';
-      if (!grouped[stateKey]) {
-        grouped[stateKey] = [];
-      }
-      grouped[stateKey].push(city);
-    });
-    return grouped;
+  const getSubServiceIcon = (title) => {
+    const t = (title || '').toLowerCase();
+    if (t.includes('fragile') || t.includes('glass')) return 'cube-outline';
+    if (t.includes('box') || t.includes('carton')) return 'archive-outline';
+    return 'cube-outline';
   };
 
   const renderCityItem = ({ item }) => (
@@ -293,32 +304,9 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
     </TouchableOpacity>
   );
 
-  const renderGroupedCity = (stateName, stateCities) => (
-    <View key={stateName}>
-      <View style={styles.stateHeader}>
-        <Text style={styles.stateHeaderText}>{stateName}</Text>
-      </View>
-      {stateCities.map(city => (
-        <TouchableOpacity
-          key={city.id}
-          style={styles.cityItem}
-          onPress={() => handleCitySelect(city)}
-          activeOpacity={0.7}
-        >
-          <View style={styles.cityItemContent}>
-            <Icon name="location-outline" size={20} color="#FF1493" />
-            <View style={styles.cityTextContainer}>
-              <Text style={styles.cityName}>{city.name}</Text>
-            </View>
-          </View>
-          <Icon name="chevron-forward-outline" size={18} color="#ccc" />
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
+  const renderSubServiceCard = ({ item }) => {
+    const isSelected = selectedSubService?.id === item.id;
 
-  const renderVehicleCard = ({ item }) => {
-    const isSelected = selectedVehicle?.id === item.id;
     const imageUri = item.image
       ? `http://91.108.104.79:3000/uploads/subservice/${item.image}`
       : null;
@@ -326,7 +314,7 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
     return (
       <TouchableOpacity
         style={[styles.vehicleCard, isSelected && styles.vehicleCardSelected]}
-        onPress={() => handleVehicleSelect(item)}
+        onPress={() => handleSubServiceSelect(item)}
         activeOpacity={0.85}
       >
         <LinearGradient
@@ -334,21 +322,14 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
           style={styles.vehicleCardInner}
         >
           {imageUri ? (
-            <Image
-              source={{ uri: imageUri }}
-              style={styles.vehicleImage}
-              resizeMode="contain"
-            />
+            <Image source={{ uri: imageUri }} style={styles.vehicleImage} resizeMode="contain" />
           ) : (
-            <Icon
-              name={getVehicleIcon(item.title)}
-              size={36}
-              color={isSelected ? '#fff' : '#FF1493'}
-            />
+            <Icon name={getSubServiceIcon(item.title)} size={36} color={isSelected ? '#fff' : '#FF1493'} />
           )}
           <Text style={[styles.vehicleTitle, isSelected && styles.vehicleTitleSelected]}>
             {item.title}
           </Text>
+
           {isSelected && (
             <View style={styles.vehicleCheckBadge}>
               <Icon name="checkmark-circle" size={16} color="#4CAF50" />
@@ -395,14 +376,26 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
                 size={12}
                 color={selectedPlan?.id === plan.id ? '#fff' : '#666'}
               />
-              <Text style={[styles.durationText, selectedPlan?.id === plan.id && styles.selectedText]}>
+              <Text
+                style={[
+                  styles.durationText,
+                  selectedPlan?.id === plan.id && styles.selectedText,
+                ]}
+              >
                 {plan.plan_hour}h
               </Text>
             </View>
           </View>
 
-          <Text style={[styles.planDescription, selectedPlan?.id === plan.id && styles.selectedTextLight]}>
-            {plan.description !== 'NA' ? plan.description : `${plan.plan_hour} hours • ${plan.plan_km} km`}
+          <Text
+            style={[
+              styles.planDescription,
+              selectedPlan?.id === plan.id && styles.selectedTextLight,
+            ]}
+          >
+            {plan.description !== 'NA'
+              ? plan.description
+              : `${plan.plan_hour} hours • ${plan.plan_km} km`}
           </Text>
 
           <View style={styles.featuresContainer}>
@@ -412,11 +405,6 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
             <View style={[styles.featureBadge2, selectedPlan?.id === plan.id && styles.featureBadge]}>
               <Text style={styles.featureText}>{plan.plan_km} km</Text>
             </View>
-            {plan.driver_amount > 0 && (
-              <View style={[styles.featureBadge2, selectedPlan?.id === plan.id && styles.featureBadge]}>
-                <Text style={styles.featureText}>Driver included</Text>
-              </View>
-            )}
           </View>
 
           <View style={styles.planFooter}>
@@ -444,7 +432,7 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
         <StatusBar barStyle="dark-content" backgroundColor="#fff" />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#FF1493" />
-          <Text style={styles.loadingText}>Loading vehicles...</Text>
+          <Text style={styles.loadingText}>Loading parcel options...</Text>
         </View>
       </SafeAreaView>
     );
@@ -454,24 +442,22 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#ff7f50" />
 
-      <CurvedHeader title="Pick your requirement" navigation={navigation} showBack />
+      <CurvedHeader title="Parcel Booking" navigation={navigation} showBack />
+
+      <View style={styles.topRight}>{myParcelsButton}</View>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          {/* Vehicle Selection */}
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Choose your service and plan</Text>
+            <Text style={styles.sectionTitle}>Choose your parcel type</Text>
 
             {subServices && subServices.length > 0 ? (
               <FlatList
                 data={subServices}
-                renderItem={renderVehicleCard}
+                renderItem={renderSubServiceCard}
                 keyExtractor={(item) => item.id.toString()}
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.vehicleList}
@@ -479,19 +465,18 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
               />
             ) : (
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No vehicles available</Text>
+                <Text style={styles.emptyText}>No parcel types available</Text>
               </View>
             )}
           </View>
 
-          {/* Trip Details Form — shown after vehicle selected */}
-          {selectedVehicle && (
+          {selectedSubService && (
             <>
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Trip Details</Text>
+                <Text style={styles.sectionTitle}>Parcel Details</Text>
 
                 <View style={styles.formCard}>
-                  {/* Pickup City - with selector */}
+                  {/* pickup city - with selector */}
                   <TouchableOpacity
                     style={styles.inputGroup}
                     onPress={() => openCitySelector('pickup')}
@@ -503,117 +488,235 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
                     </Text>
                     <Icon name="chevron-down-outline" size={18} color="#999" />
                   </TouchableOpacity>
-
-                  {isRental && (
-                    <>
-                      <View style={styles.divider} />
-                      {/* To City - for rental */}
-                      <TouchableOpacity
-                        style={styles.inputGroup}
-                        onPress={() => openCitySelector('to')}
-                        activeOpacity={0.7}
-                      >
-                        <Icon name="navigate-outline" size={20} color="#FF1493" />
-                        <Text style={[styles.inputText, toCity ? styles.inputTextSelected : styles.inputTextPlaceholder]}>
-                          {toCity || 'Select To City'}
-                        </Text>
-                        <Icon name="chevron-down-outline" size={18} color="#999" />
-                      </TouchableOpacity>
-                    </>
-                  )}
-
                   <View style={styles.divider} />
 
-                  {/* Drop City */}
-                  <TouchableOpacity
-                    style={styles.inputGroup}
-                    onPress={() => !isRental && openCitySelector('drop')}
-                    activeOpacity={isRental ? 1 : 0.7}
-                  >
-                    <Icon name="flag-outline" size={20} color={isRental ? '#ccc' : '#FF1493'} />
-                    <Text style={[
-                      styles.inputText,
-                      isRental && styles.inputDisabled,
-                      dropCity && !isRental ? styles.inputTextSelected : styles.inputTextPlaceholder
-                    ]}>
-                      {dropCity || (isRental ? 'Same as Pickup City' : 'Select Drop City')}
-                    </Text>
-                    {!isRental && <Icon name="chevron-down-outline" size={18} color="#999" />}
+                  {/* pickup date */}
+                  <TouchableOpacity style={styles.inputGroup} onPress={() => setShowDatePicker(true)}>
+                    <Icon name="calendar-outline" size={20} color="#FF1493" />
+                    <Text style={styles.dateTimeText}>{pickupDate.toDateString()}</Text>
                   </TouchableOpacity>
+                  <View style={styles.divider} />
 
+                  {/* pickup time */}
+                  <TouchableOpacity style={styles.inputGroup} onPress={() => setShowTimePicker(true)}>
+                    <Icon name="time-outline" size={20} color="#FF1493" />
+                    <Text style={styles.dateTimeText}>
+                      {pickupTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </Text>
+                  </TouchableOpacity>
+                  <View style={styles.divider} />
+
+                  {/* pickup address */}
+                  <View style={styles.inputGroup}>
+                    <Icon name="home-outline" size={20} color="#FF1493" />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Pickup Address"
+                      value={pickupAddress}
+                      onChangeText={setPickupAddress}
+                      placeholderTextColor="#999"
+                    />
+                  </View>
                   <View style={styles.divider} />
 
                   <View style={styles.inputGroup}>
-                    <FontAwesome5 name="users" size={18} color="#FF1493" />
-                    <View style={styles.personContainer}>
+                    <Icon name="flag-outline" size={20} color="#FF1493" />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Pickup Landmark"
+                      value={pickupLandmark}
+                      onChangeText={setPickupLandmark}
+                      placeholderTextColor="#999"
+                    />
+                  </View>
+                  <View style={styles.divider} />
+
+                  {/* drop city - with selector */}
+                  <TouchableOpacity
+                    style={styles.inputGroup}
+                    onPress={() => openCitySelector('drop')}
+                    activeOpacity={0.7}
+                  >
+                    <Icon name="navigate-outline" size={20} color="#FF1493" />
+                    <Text style={[styles.inputText, dropCity ? styles.inputTextSelected : styles.inputTextPlaceholder]}>
+                      {dropCity || 'Select Drop City'}
+                    </Text>
+                    <Icon name="chevron-down-outline" size={18} color="#999" />
+                  </TouchableOpacity>
+                  <View style={styles.divider} />
+
+                  {/* drop address */}
+                  <View style={styles.inputGroup}>
+                    <Icon name="home-outline" size={20} color="#FF1493" />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Drop Address"
+                      value={dropAddress}
+                      onChangeText={setDropAddress}
+                      placeholderTextColor="#999"
+                    />
+                  </View>
+                  <View style={styles.divider} />
+
+                  <View style={styles.inputGroup}>
+                    <Icon name="flag-outline" size={20} color="#FF1493" />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Drop Landmark"
+                      value={dropLandmark}
+                      onChangeText={setDropLandmark}
+                      placeholderTextColor="#999"
+                    />
+                  </View>
+                  <View style={styles.divider} />
+
+                  {/* receiver name */}
+                  <View style={styles.inputGroup}>
+                    <Icon name="person-outline" size={20} color="#FF1493" />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Receiver Name"
+                      value={receiverName}
+                      onChangeText={setReceiverName}
+                      placeholderTextColor="#999"
+                    />
+                  </View>
+                  <View style={styles.divider} />
+
+                  {/* receiver mobile */}
+                  <View style={styles.inputGroup}>
+                    <Icon name="call-outline" size={20} color="#FF1493" />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Receiver Mobile"
+                      value={receiverMobile}
+                      onChangeText={setReceiverMobile}
+                      keyboardType="phone-pad"
+                      placeholderTextColor="#999"
+                      maxLength={10}
+                    />
+                  </View>
+                  <View style={styles.divider} />
+
+                  {/* weight */}
+                  <View style={styles.inputGroup}>
+                    <Icon name="weight" size={20} color="#FF1493" />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Approx Weight (kg)"
+                      value={approxWeight}
+                      onChangeText={setApproxWeight}
+                      keyboardType="decimal-pad"
+                      placeholderTextColor="#999"
+                    />
+                  </View>
+                  <View style={styles.divider} />
+
+                  {/* packaging dropdown */}
+                  <View style={styles.inputGroup}>
+                    <Icon name="cube-outline" size={20} color="#FF1493" />
+                    <Text style={styles.dropdownLabel}>Packaging</Text>
+                  </View>
+                  <View style={styles.dropdownRow}>
+                    {packagingMaterialTypes.map((t) => (
                       <TouchableOpacity
-                        style={styles.personButton}
-                        onPress={() => setPerson(Math.max(1, person - 1))}
+                        key={t}
+                        style={[
+                          styles.dropdownChip,
+                          packagingMaterialType === t && styles.dropdownChipSelected,
+                        ]}
+                        onPress={() => setPackagingMaterialType(t)}
+                        activeOpacity={0.85}
                       >
-                        <Icon name="remove" size={20} color="#FF1493" />
+                        <Text
+                          style={[
+                            styles.dropdownChipText,
+                            packagingMaterialType === t && styles.dropdownChipTextSelected,
+                          ]}
+                        >
+                          {t}
+                        </Text>
                       </TouchableOpacity>
-                      <Text style={styles.personCount}>{person}</Text>
-                      <TouchableOpacity
-                        style={styles.personButton}
-                        onPress={() => setPerson(person + 1)}
-                      >
-                        <Icon name="add" size={20} color="#FF1493" />
-                      </TouchableOpacity>
-                      <Text style={styles.personLabel}>Person(s)</Text>
-                    </View>
+                    ))}
                   </View>
 
                   <View style={styles.divider} />
 
-                  <TouchableOpacity
-                    style={styles.inputGroup}
-                    onPress={() => setShowDatePicker(true)}
-                  >
-                    <Icon name="calendar-outline" size={20} color="#FF1493" />
-                    <Text style={styles.dateTimeText}>{scheduleDate.toDateString()}</Text>
-                  </TouchableOpacity>
+                  {/* loading/unloading dropdown */}
+                  <View style={styles.inputGroup}>
+                    <Icon name="swap-horizontal-outline" size={20} color="#FF1493" />
+                    <Text style={styles.dropdownLabel}>Loading/Unloading</Text>
+                  </View>
+                  <View style={styles.dropdownRow}>
+                    {loadingUnloadingTypes.map((t) => (
+                      <TouchableOpacity
+                        key={t}
+                        style={[
+                          styles.dropdownChip,
+                          loadingUnloading === t && styles.dropdownChipSelected,
+                        ]}
+                        onPress={() => setLoadingUnloading(t)}
+                        activeOpacity={0.85}
+                      >
+                        <Text
+                          style={[
+                            styles.dropdownChipText,
+                            loadingUnloading === t && styles.dropdownChipTextSelected,
+                          ]}
+                        >
+                          {t}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
 
                   <View style={styles.divider} />
 
-                  <TouchableOpacity
-                    style={styles.inputGroup}
-                    onPress={() => setShowTimePicker(true)}
-                  >
-                    <Icon name="time-outline" size={20} color="#FF1493" />
-                    <Text style={styles.dateTimeText}>
-                      {scheduleDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </Text>
-                  </TouchableOpacity>
+                  {/* remarks */}
+                  <View style={styles.inputGroup}>
+                    <FontAwesome5 name="comment-dots" size={18} color="#FF1493" />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Remarks"
+                      value={remarks}
+                      onChangeText={setRemarks}
+                      placeholderTextColor="#999"
+                    />
+                  </View>
                 </View>
               </View>
 
               {showDatePicker && (
                 <DateTimePicker
-                  value={scheduleDate}
+                  value={pickupDate}
                   mode="date"
                   display="default"
-                  onChange={handleDateChange}
+                  onChange={(event, selectedDate) => {
+                    setShowDatePicker(false);
+                    if (selectedDate) setPickupDate(new Date(selectedDate));
+                  }}
                   minimumDate={new Date()}
                 />
               )}
 
               {showTimePicker && (
                 <DateTimePicker
-                  value={scheduleDate}
+                  value={pickupTime}
                   mode="time"
                   display="default"
-                  onChange={handleTimeChange}
+                  onChange={(event, selectedTime) => {
+                    setShowTimePicker(false);
+                    if (selectedTime) setPickupTime(new Date(selectedTime));
+                  }}
                 />
               )}
 
-              {/* Plans Section */}
+              {/* Plans */}
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Select Plan</Text>
                 <Text style={styles.sectionSubtitle}>
                   Plans for{' '}
-                  <Text style={{ color: '#FF1493', fontWeight: 'bold' }}>
-                    {selectedVehicle.title}
-                  </Text>
+                  <Text style={{ color: '#FF1493', fontWeight: 'bold' }}>{selectedSubService.title}</Text>
                 </Text>
 
                 {plansLoading ? (
@@ -625,7 +728,7 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
                   plans.map(renderPlanCard)
                 ) : (
                   <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>No plans available for this vehicle</Text>
+                    <Text style={styles.emptyText}>No plans available for this parcel type</Text>
                   </View>
                 )}
               </View>
@@ -639,16 +742,22 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
         visible={citiesModalVisible}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => setCitiesModalVisible(false)}
+        onRequestClose={() => {
+          setCitiesModalVisible(false);
+          setCitySearchText('');
+        }}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                Select {activeCityField === 'pickup' ? 'Pickup' : activeCityField === 'drop' ? 'Drop' : 'To'} City
+                Select {activeCityField === 'pickup' ? 'Pickup' : 'Drop'} City
               </Text>
               <TouchableOpacity
-                onPress={() => setCitiesModalVisible(false)}
+                onPress={() => {
+                  setCitiesModalVisible(false);
+                  setCitySearchText('');
+                }}
                 style={styles.modalCloseButton}
               >
                 <Icon name="close" size={24} color="#333" />
@@ -699,28 +808,21 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
         </View>
       </Modal>
 
-      {/* Bottom Submit Button */}
       <View style={styles.bottomContainer}>
         <TouchableOpacity
           style={[
             styles.submitButton,
-            (!selectedVehicle || !pickupCity || !dropCity || !selectedPlan || bookingLoading) &&
-              styles.disabledButton,
+            (!selectedSubService || !selectedPlan || bookingLoading) && styles.disabledButton,
           ]}
           onPress={handleSubmitBooking}
-          disabled={!selectedVehicle || !pickupCity || !dropCity || !selectedPlan || bookingLoading}
+          disabled={!selectedSubService || !selectedPlan || bookingLoading}
         >
-          <LinearGradient
-            colors={['#FF1493', '#FF69B4']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.submitGradient}
-          >
+          <LinearGradient colors={['#FF1493', '#FF69B4']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.submitGradient}>
             {bookingLoading ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
               <>
-                <Text style={styles.submitButtonText}>Confirm Booking</Text>
+                <Text style={styles.submitButtonText}>Confirm Parcel Booking</Text>
                 <Icon name="arrow-forward" size={20} color="#fff" />
               </>
             )}
@@ -736,8 +838,37 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
+  topRight: {
+    zIndex: 10,
+    width: '100%',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginTop: 12,
+  },
+  myParcelsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 18,
+    borderRadius: 16,
+    backgroundColor: '#FF1493',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 6,
+    width: '100%',
+    justifyContent: 'center',
+    alignSelf: 'center',
+  },
+  myParcelsText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 12,
+  },
   scrollContent: {
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
   loadingContainer: {
     flex: 1,
@@ -761,7 +892,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#1A2B4E',
-    marginBottom: 4,
+    marginBottom: 8,
   },
   sectionSubtitle: {
     fontSize: 13,
@@ -805,6 +936,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     textTransform: 'capitalize',
     marginLeft: 12,
+    flexShrink: 1,
   },
   vehicleTitleSelected: {
     color: '#fff',
@@ -814,6 +946,7 @@ const styles = StyleSheet.create({
     top: 6,
     right: 6,
   },
+
   emptyContainer: {
     paddingVertical: 30,
     alignItems: 'center',
@@ -822,6 +955,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#999',
   },
+
   formCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
@@ -832,16 +966,22 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
+
   inputGroup: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 14,
     gap: 12,
   },
+  input: {
+    flex: 1,
+    fontSize: 14,
+    color: '#333',
+    padding: 0,
+  },
   inputText: {
     flex: 1,
     fontSize: 14,
-    padding: 0,
   },
   inputTextSelected: {
     color: '#333',
@@ -849,45 +989,47 @@ const styles = StyleSheet.create({
   inputTextPlaceholder: {
     color: '#999',
   },
-  inputDisabled: {
-    color: '#999',
-    backgroundColor: 'transparent',
-  },
   divider: {
     height: 1,
     backgroundColor: '#f0f0f0',
-  },
-  personContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  personButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FFF0F5',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  personCount: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    minWidth: 30,
-    textAlign: 'center',
-  },
-  personLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginLeft: 'auto',
   },
   dateTimeText: {
     flex: 1,
     fontSize: 14,
     color: '#333',
   },
+
+  dropdownLabel: {
+    flex: 1,
+    fontSize: 13,
+    color: '#333',
+    fontWeight: '700',
+  },
+  dropdownRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    gap: 8,
+  },
+  dropdownChip: {
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 16,
+  },
+  dropdownChipSelected: {
+    backgroundColor: '#FF1493',
+  },
+  dropdownChipText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#444',
+  },
+  dropdownChipTextSelected: {
+    color: '#fff',
+  },
+
   planCard: {
     marginBottom: 12,
     borderRadius: 16,
@@ -959,9 +1101,6 @@ const styles = StyleSheet.create({
   },
   featureBadge: {
     backgroundColor: '#fff',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 12,
   },
   featureBadge2: {
     backgroundColor: 'rgba(0,0,0,0.05)',
@@ -998,6 +1137,7 @@ const styles = StyleSheet.create({
   selectedTextLight: {
     color: 'rgba(255,255,255,0.9)',
   },
+
   bottomContainer: {
     position: 'absolute',
     bottom: 0,
@@ -1032,6 +1172,7 @@ const styles = StyleSheet.create({
   disabledButton: {
     opacity: 0.6,
   },
+
   // Modal Styles
   modalOverlay: {
     flex: 1,
@@ -1111,18 +1252,6 @@ const styles = StyleSheet.create({
     color: '#999',
     marginTop: 2,
   },
-  stateHeader: {
-    backgroundColor: '#F8F9FA',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  stateHeaderText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#FF1493',
-  },
   modalLoadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -1154,4 +1283,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default VehicleSelectionScreen;
+export default ParcelVehicleSelectionScreen;

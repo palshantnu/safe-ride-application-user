@@ -5,6 +5,7 @@ const EndPoints = {
   verifyOtp: 'user/verify-otp',
   getPlans: 'user/getplan',
   createBooking: 'user/bookingrequest',
+  createBookingParcel: 'parcel/booking/create',
   pagesByRole: 'pages/by-role',
   getInvoice: '/invoice',
   processPayment: 'user/processPayment',

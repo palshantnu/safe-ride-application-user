@@ -158,6 +158,41 @@ export const CREATE_BOOKING = (bookingData) => async (dispatch) => {
   }
 };
 
+
+export const CREATE_BOOKING_PARCEL = (bookingData) => async (dispatch) => {
+  dispatch({ type: types.CREATE_BOOKING_REQUEST });
+  console.log('bookingData--->', bookingData);
+  
+  try {
+    const response = await axiosinstance.post(EndPoints.createBookingParcel, bookingData);
+    console.log('CREATE_BOOKING Response:', response);
+    
+    if (response.data.status) {
+      dispatch({
+        type: types.CREATE_BOOKING_SUCCESS,
+        payload: response.data,
+      });
+    } else {
+      dispatch({
+        type: types.CREATE_BOOKING_FAILURE,
+        payload: response.data.message || 'Booking failed',
+      });
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.log('CREATE_BOOKING Error:', error);
+       console.log('UPDATE_USER_PROFILE Error:', error);
+      console.log('error', error.response?.data);
+      console.log('status', error.response?.status);
+    dispatch({
+      type: types.CREATE_BOOKING_FAILURE,
+      payload: error.message,
+    });
+    throw error;
+  }
+};
+
 // Clear booking data
 export const CLEAR_BOOKING_DATA = () => (dispatch) => {
   dispatch({ type: types.CLEAR_BOOKING_DATA });
@@ -296,6 +331,125 @@ export const GET_USER_BOOKING_HISTORY = () => (dispatch) => {
       return { status: false, message: error.message, data: [] };
     });
 };
+
+// GET USER PARCEL BOOKINGS / MY PARCELS
+export const GET_MY_PARCELS = (page = 1, limit = 10) => (dispatch) => {
+  return axiosinstance.get('/parcel/my-bookings', {
+    params: {
+      page,
+      limit,
+    },
+  })
+    .then((response) => {
+      console.log('GET_MY_PARCELS Response:', response);
+      return response.data;
+    })
+    .catch((error) => {
+      console.log('GET_MY_PARCELS Error:', error);
+      console.log('GET_MY_PARCELS Error:', error);
+      console.log('error', error.response?.data);
+      console.log('status', error.response?.status);
+      return { status: false, message: error.message, data: [], pagination: null };
+    });
+};
+
+// Parcel Pay Token
+export const PAY_PARCEL_TOKEN = (payload) => async (dispatch) => {
+  dispatch({ type: types.PAY_PARCEL_TOKEN_REQUEST });
+
+  try {
+    const response = await axiosinstance.post('/parcel/booking/pay-token', payload);
+
+    if (response.data?.status) {
+      dispatch({
+        type: types.PAY_PARCEL_TOKEN_SUCCESS,
+        payload: response.data,
+      });
+    } else {
+      dispatch({
+        type: types.PAY_PARCEL_TOKEN_FAILURE,
+        payload: response.data?.message || 'Token payment failed',
+      });
+    }
+
+    return response.data;
+  } catch (error) {
+    const message = error?.response?.data?.message || error?.message || 'Network error';
+    dispatch({
+      type: types.PAY_PARCEL_TOKEN_FAILURE,
+      payload: message,
+    });
+    throw new Error(message);
+  }
+};
+
+// Parcel Pay Balance (Online/Cash)
+export const PAY_PARCEL_BALANCE = (payload) => async (dispatch) => {
+  dispatch({ type: types.PAY_PARCEL_BALANCE_REQUEST });
+
+  try {
+    const response = await axiosinstance.post('/parcel/booking/pay-balance', payload);
+
+    if (response.data?.status) {
+      dispatch({
+        type: types.PAY_PARCEL_BALANCE_SUCCESS,
+        payload: response.data,
+      });
+    } else {
+      dispatch({
+        type: types.PAY_PARCEL_BALANCE_FAILURE,
+        payload: response.data?.message || 'Balance payment failed',
+      });
+    }
+
+    return response.data;
+  } catch (error) {
+    const message = error?.response?.data?.message || error?.message || 'Network error';
+    dispatch({
+      type: types.PAY_PARCEL_BALANCE_FAILURE,
+      payload: message,
+    });
+    throw new Error(message);
+  }
+};
+
+// Parcel Cancellation
+export const CANCEL_PARCEL_BOOKING = ({ parcel_booking_id, cancel_reason }) => async (dispatch) => {
+  dispatch({ type: types.CANCEL_PARCEL_BOOKING_REQUEST });
+
+  try {
+    const response = await axiosinstance.post('/parcel/booking/cancel', {
+      parcel_booking_id,
+      cancel_reason,
+    });
+
+    if (response.data?.status) {
+      dispatch({
+        type: types.CANCEL_PARCEL_BOOKING_SUCCESS,
+        payload: response.data,
+      });
+    } else {
+      dispatch({
+        type: types.CANCEL_PARCEL_BOOKING_FAILURE,
+        payload: response.data?.message || 'Cancel failed',
+      });
+    }
+
+    return response.data;
+  } catch (error) {
+    const message =
+      error?.response?.data?.message || error?.message || 'Network error';
+
+    dispatch({
+      type: types.CANCEL_PARCEL_BOOKING_FAILURE,
+      payload: message,
+    });
+
+    throw new Error(message);
+  }
+};
+
+
 export const logout = () => (dispatch) => {
   dispatch({ type: types.LOGOUT_SUCCESS });
 };
@@ -344,7 +498,7 @@ export const CREATE_SELF_SHARING_BOOKING = (bookingData, serviceType = 'selfshar
   dispatch({ type: types.CREATE_SELF_SHARING_BOOKING_REQUEST });
 
   try {
-    const response = await axiosinstance.post(`/${serviceType}/booking/create`, bookingData);
+    const response = await axiosinstance.post(`/selfsharing/booking/create`, bookingData);
 
     if (response.data.status) {
       dispatch({
@@ -379,7 +533,7 @@ export const GET_SELF_SHARING_BOOKINGS = (serviceType = 'selfsharing', page = 1,
   dispatch({ type: types.GET_SELF_SHARING_BOOKINGS_REQUEST });
 
   try {
-    const response = await axiosinstance.get(`/${serviceType}/booking/my-bookings`, {
+    const response = await axiosinstance.get(`/selfsharing/booking/my-bookings`, {
       params: {
         page,
         limit,
@@ -414,7 +568,7 @@ export const CANCEL_SELF_SHARING_BOOKING = (bookingId, serviceType = 'selfsharin
   dispatch({ type: types.CANCEL_SELF_SHARING_BOOKING_REQUEST });
 
   try {
-    const response = await axiosinstance.post(`/${serviceType}/booking/cancel`, {
+    const response = await axiosinstance.post(`/selfsharing/booking/cancel`, {
       booking_id: bookingId,
     });
 
@@ -446,7 +600,7 @@ export const PAY_FULL_BALANCE = (bookingId, paymentMode, serviceType = 'selfshar
   dispatch({ type: types.PAY_FULL_BALANCE_REQUEST });
 console.log('PAY_FULL_BALANCE Params:', { bookingId, paymentMode, serviceType });
   try {
-    const response = await axiosinstance.post(`/${serviceType}/booking/pay-full`, {
+    const response = await axiosinstance.post(`/selfsharing/booking/pay-full`, {
       booking_id: bookingId,
       payment_mode: paymentMode,
     });

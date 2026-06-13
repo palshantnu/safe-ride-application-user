@@ -97,6 +97,24 @@ export const common = (state = initialState, action) => {
         bookingError: null,
       };
     
+    case types.PAY_PARCEL_TOKEN_REQUEST:
+      return { ...state, parcelPaymentLoading: true, parcelPaymentError: null };
+
+    case types.PAY_PARCEL_TOKEN_SUCCESS:
+      return { ...state, parcelPaymentLoading: false, parcelPaymentError: null };
+
+    case types.PAY_PARCEL_TOKEN_FAILURE:
+      return { ...state, parcelPaymentLoading: false, parcelPaymentError: action.payload };
+
+    case types.PAY_PARCEL_BALANCE_REQUEST:
+      return { ...state, parcelPaymentLoading: true, parcelPaymentError: null };
+
+    case types.PAY_PARCEL_BALANCE_SUCCESS:
+      return { ...state, parcelPaymentLoading: false, parcelPaymentError: null };
+
+    case types.PAY_PARCEL_BALANCE_FAILURE:
+      return { ...state, parcelPaymentLoading: false, parcelPaymentError: action.payload };
+
     default:
       return state;
   }
