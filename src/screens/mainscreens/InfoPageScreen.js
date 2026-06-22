@@ -11,7 +11,10 @@ const InfoPageScreen = ({ route, navigation }) => {
     ? page.title.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
     : 'Page';
   const content = page?.content || '<p>No content available</p>';
-
+  console.log('Rendering InfoPageScreen with title:', content);
+const cleanHtml = content
+  .replace(/<font[^>]*>/gi, '')
+  .replace(/<\/font>/gi, '');
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -29,8 +32,9 @@ const InfoPageScreen = ({ route, navigation }) => {
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
         <RenderHTML
           contentWidth={width - 32}
-          source={{ html: content }}
-          tagsStyles={htmlStyles}
+          source={{ html: cleanHtml }}
+         tagsStyles={htmlStyles}
+          enableCSSInlineProcessing={true}
         />
       </ScrollView>
     </View>
@@ -80,6 +84,29 @@ const htmlStyles = {
   },
   b: {
     fontWeight: '700',
+  },
+     h1: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginVertical: 10,
+    color: '#000',
+  },
+
+  h2: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginVertical: 8,
+    color: '#000',
+  },
+  h3: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginVertical: 6,
+    color: '#000',
+  },
+  li: {
+    marginBottom: 6,
+    color: '#333',
   },
 };
 

@@ -1,4 +1,4 @@
-package com.saferide_user
+package com.sigirideuserstaxi
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

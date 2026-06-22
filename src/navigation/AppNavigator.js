@@ -27,6 +27,7 @@ import SelfSharingBookingScreen from '../screens/mainscreens/SelfSharingBookingS
 import MyBookingsScreen from '../screens/mainscreens/MyBookingsScreen';
 import ParcelMyParcelsHistoryScreen from '../screens/mainscreens/ParcelMyParcelsHistoryScreen';
 import ParcelVehicleSelectionScreen from '../screens/mainscreens/ParcelVehicleSelectionScreen';
+import OnSpotBookings from '../screens/mainscreens/OnSpotBookings';
 
 
 const Stack = createStackNavigator();
@@ -238,7 +239,11 @@ const AppNavigator = () => {
               component={ParcelMyParcelsHistoryScreen}
               options={{ headerShown: false }}
             />
-
+<Stack.Screen 
+  name="OnSpotBookings" 
+  component={OnSpotBookings} 
+  options={{ headerShown: false }}
+/>
           </>
         ) : (
           // User is not authenticated - show Auth screens

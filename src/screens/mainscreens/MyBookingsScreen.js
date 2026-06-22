@@ -296,12 +296,12 @@ const MyBookingsScreen = ({ navigation, route }) => {
                 <Text style={styles.driverName}>{item.driver_name}</Text>
               </View>
             </View>
-            {item.driver_mobile && (
+            {/* {item.driver_mobile && (
               <TouchableOpacity style={styles.contactButton}>
                 <FontAwesome5 name="phone" size={12} color="#FF1493" />
                 <Text style={styles.contactButtonText}>Contact</Text>
               </TouchableOpacity>
-            )}
+            )} */}
           </View>
         )}
 

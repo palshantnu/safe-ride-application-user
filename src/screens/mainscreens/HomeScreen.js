@@ -618,7 +618,7 @@ const HomeScreen = ({ navigation }) => {
     const pickupLocation = booking?.pickup_address || booking?.pickup_city;
     const dropLocation = booking?.drop_address || booking?.drop_city;
     const status = booking?.status;
-    const showDriverInfo = ['ACCEPTED', 'TOKEN_PAID', 'ARRIVED', 'STARTED', 'TOPUP_PENDING'].includes(status);
+    const showDriverInfo = ['TOKEN_PAID', 'ARRIVED', 'STARTED'].includes(status);
     const showOtp = status === 'ARRIVED' || status === 'BALANCE_PAID';
 
     const totalTopupAmount = booking?.topups?.reduce((sum, t) => sum + parseFloat(t.topup_amount), 0) || 0;

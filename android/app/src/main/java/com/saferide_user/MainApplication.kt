@@ -1,4 +1,4 @@
-package com.saferide_user
+package com.sigirideuserstaxi
 
 import android.app.Application
 import com.facebook.react.PackageList

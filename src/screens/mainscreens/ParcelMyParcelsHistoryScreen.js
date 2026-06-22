@@ -420,9 +420,9 @@ console.log('isDelivered', isDelivered,'isCancelled',isCancelled);
     const drop = item?.drop_address || item?.drop_city;
     const weight = item?.approx_weight ?? item?.weight;
     const balance_paid = item?.balance_paid;
-
-    const showPayToken = user_status != 'TOKEN_PAID';
-    const showPayBalance =  balance_paid == 0;
+console.log('parcel_booking_id', item?.parcel_booking_id,'user_status', user_status,'balance_paid', balance_paid);
+    const showPayToken = user_status != 'TOKEN_PAID' && statusLower != 'pending';
+    const showPayBalance =  balance_paid == 0  && user_status == 'TOKEN_PAID' && statusLower != 'pending';
     const pickup_otp_verified = pickup_otp_verified == 0;
 
     const tokenAmount = parseFloat(item?.token_amount || item?.amount || 0);
@@ -472,10 +472,10 @@ console.log('isDelivered', isDelivered,'isCancelled',isCancelled);
             <FontAwesome5 name="user" size={12} color="#666" />
             <Text style={styles.detailText}>Receiver: {item?.receiver_name || '-'}</Text>
           </View>
-          <View style={styles.detailItem}>
+          {/* <View style={styles.detailItem}>
             <Icon name="call-outline" size={12} color="#666" />
             <Text style={styles.detailText}>{item?.receiver_mobile || '-'}</Text>
-          </View>
+          </View> */}
         </View>
 
         <View style={styles.footerRow}>

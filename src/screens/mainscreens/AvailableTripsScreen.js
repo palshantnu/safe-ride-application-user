@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Image,
   ScrollView,
   StatusBar,
   Alert,
@@ -91,10 +92,21 @@ const AvailableTripsScreen = ({ navigation, route }) => {
             <Text style={styles.departureTime}>{formatDateTime(item.departure_time)}</Text>
             <Text style={styles.tripDuration}>{tripDuration}</Text>
           </View>
+<View>
+
+
           <View
             style={[styles.statusBadge, { backgroundColor: statusColor }]}
           >
             <Text style={styles.statusText}>{item.status}</Text>
+          </View>
+          {Number(item.service_id) === 73 && (
+  <Image
+    source={require('../../assets/intercity.jpeg')}
+    style={styles.serviceBanner}
+    resizeMode="cover"
+  />
+)}
           </View>
         </View>
 
@@ -125,10 +137,10 @@ const AvailableTripsScreen = ({ navigation, route }) => {
             <FontAwesome5 name="user-circle" size={14} color="#FF1493" />
             <Text style={styles.driverName}>{item.creator_name}</Text>
           </View>
-          <View style={styles.driverDetail}>
+          {/* <View style={styles.driverDetail}>
             <FontAwesome5 name="phone" size={12} color="#FF1493" />
             <Text style={styles.driverPhone}>{item.creator_mobile}</Text>
-          </View>
+          </View> */}
         </View>
 
         {/* Seats & Fare */}
@@ -497,6 +509,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  serviceBanner: {
+  width: 50,
+  height: 50,
+  borderRadius: 10,
+  marginBottom: 12,
+},
 });
 
 export default AvailableTripsScreen;

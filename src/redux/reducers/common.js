@@ -114,7 +114,30 @@ export const common = (state = initialState, action) => {
 
     case types.PAY_PARCEL_BALANCE_FAILURE:
       return { ...state, parcelPaymentLoading: false, parcelPaymentError: action.payload };
+case types.CREATE_ONSPOT_BOOKING_REQUEST:
+  return {
+    ...state,
+    bookingLoading: true,
+    bookingSuccess: false,
+    bookingError: null,
+  };
 
+case types.CREATE_ONSPOT_BOOKING_SUCCESS:
+  return {
+    ...state,
+    bookingLoading: false,
+    booking: action.payload,
+    bookingSuccess: true,
+    bookingError: null,
+  };
+
+case types.CREATE_ONSPOT_BOOKING_FAILURE:
+  return {
+    ...state,
+    bookingLoading: false,
+    bookingSuccess: false,
+    bookingError: action.payload,
+  };
     default:
       return state;
   }

@@ -13,5 +13,6 @@ const EndPoints = {
   rechargeHistory: 'user/recharge-history',
   userWithdrawalHistory: 'user/withdrawal-history',
   userWithdrawalRequest: 'user/withdrawal-request',
+  createOnSpotBooking: '/onspot/booking/create',
 };
 export default EndPoints;

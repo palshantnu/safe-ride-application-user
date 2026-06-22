@@ -633,3 +633,69 @@ console.log('PAY_FULL_BALANCE Params:', { bookingId, paymentMode, serviceType })
    
   }
 };
+export const CREATE_ONSPOT_BOOKING =
+  bookingData => async dispatch => {
+
+    dispatch({
+      type:
+        types.CREATE_ONSPOT_BOOKING_REQUEST,
+    });
+
+    console.log(
+      'CREATE_ONSPOT_BOOKING',
+      bookingData,
+    );
+
+    try {
+
+      const response =
+        await axiosinstance.post(
+          EndPoints.createOnSpotBooking,
+          bookingData,
+        );
+
+      console.log(
+        'CREATE_ONSPOT_BOOKING Response',
+        response,
+      );
+
+      if (response.data.status) {
+
+        dispatch({
+          type:
+            types.CREATE_ONSPOT_BOOKING_SUCCESS,
+          payload:
+            response.data,
+        });
+
+      } else {
+
+        dispatch({
+          type:
+            types.CREATE_ONSPOT_BOOKING_FAILURE,
+          payload:
+            response.data.message,
+        });
+
+      }
+
+      return response.data;
+
+    } catch (error) {
+
+      console.log(
+        'CREATE_ONSPOT_BOOKING Error',
+        error,
+      );
+
+      dispatch({
+        type:
+          types.CREATE_ONSPOT_BOOKING_FAILURE,
+        payload:
+          error.response?.data?.message ||
+          error.message,
+      });
+
+      throw error;
+    }
+  };
