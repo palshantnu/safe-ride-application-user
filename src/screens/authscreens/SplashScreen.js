@@ -41,13 +41,11 @@ const SplashScreen = () => {
         backgroundColor="transparent"
         barStyle="light-content"
       />
-
-      {/* Background GIF */}
      <FastImage
   source={require('../../assets/welcome.gif')}
   style={[styles.backgroundGif, { width, height }]}
 />
-  
+
       
     </View>
   ); 

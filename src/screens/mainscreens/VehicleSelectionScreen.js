@@ -35,7 +35,7 @@
 
 // const { width } = Dimensions.get('window');
 
-// const API_BASE_URL = 'http://91.108.104.79:3000';
+// const API_BASE_URL = 'https://sigiride.com';
 
 // const VehicleSelectionScreen = ({ route, navigation }) => {
 //   const { service_id, service_title } = route.params;
@@ -389,7 +389,7 @@
 //   const renderVehicleCard = ({ item }) => {
 //     const isSelected = selectedVehicle?.id === item.id;
 //     const imageUri = item.image
-//       ? `http://91.108.104.79:3000/uploads/subservice/${item.image}`
+//       ? `https://sigiride.com/uploads/subservice/${item.image}`
 //       : null;
 
 //     return (
@@ -445,7 +445,7 @@
 //           <Image
 //             source={{
 //               uri: plan.image
-//                 ? `http://91.108.104.79:3000/uploads/plan/${plan.image}`
+//                 ? `https://sigiride.com/uploads/plan/${plan.image}`
 //                 : 'https://cdn-icons-png.flaticon.com/128/809/809998.png',
 //             }}
 //             style={styles.planImage}
@@ -1497,7 +1497,7 @@ import axios from 'axios';
 
 const { width } = Dimensions.get('window');
 
-const API_BASE_URL = 'http://91.108.104.79:3000';
+const API_BASE_URL = 'https://sigiride.com';
 
 const VehicleSelectionScreen = ({ route, navigation }) => {
   const { service_id, service_title } = route.params;
@@ -1809,7 +1809,7 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
   const renderVehicleCard = ({ item }) => {
     const isSelected = selectedVehicle?.id === item.id;
     const imageUri = item.image
-      ? `http://91.108.104.79:3000/uploads/subservice/${item.image}`
+      ? `https://sigiride.com/uploads/subservice/${item.image}`
       : null;
 
     return (
@@ -1865,7 +1865,7 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
           <Image
             source={{
               uri: plan.image
-                ? `http://91.108.104.79:3000/uploads/plan/${plan.image}`
+                ? `https://sigiride.com/uploads/plan/${plan.image}`
                 : 'https://cdn-icons-png.flaticon.com/128/809/809998.png',
             }}
             style={styles.planImage}

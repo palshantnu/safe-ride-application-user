@@ -45,7 +45,7 @@ const OnSpotBookings = ({ navigation }) => {
   // API 1: Fetch Current Bookings from /onspot/current-booking
   const fetchCurrentBookings = async () => {
     try {
-      const response = await axios.get('http://91.108.104.79:3000/api/onspot/current-booking', {
+      const response = await axios.get('https://sigiride.com/api/onspot/current-booking', {
         headers: { Authorization: `Bearer ${loginToken}` },
       });
 
@@ -71,7 +71,7 @@ const OnSpotBookings = ({ navigation }) => {
   // API 2: Fetch All Bookings from /onspot/my-bookings
   const fetchAllBookings = async () => {
     try {
-      const response = await axios.get('http://91.108.104.79:3000/api/onspot/my-bookings', {
+      const response = await axios.get('https://sigiride.com/api/onspot/my-bookings', {
         headers: { Authorization: `Bearer ${loginToken}` },
       });
 
@@ -114,10 +114,10 @@ const OnSpotBookings = ({ navigation }) => {
       
       // Fetch both APIs in parallel
       const [currentRes, allRes] = await Promise.all([
-        axios.get('http://91.108.104.79:3000/api/onspot/current-booking', {
+        axios.get('https://sigiride.com/api/onspot/current-booking', {
           headers: { Authorization: `Bearer ${loginToken}` },
         }).catch(err => ({ data: { status: false, data: [] } })),
-        axios.get('http://91.108.104.79:3000/api/onspot/my-bookings', {
+        axios.get('https://sigiride.com/api/onspot/my-bookings', {
           headers: { Authorization: `Bearer ${loginToken}` },
         }).catch(err => ({ data: { status: false, data: [] } }))
       ]);
@@ -223,7 +223,7 @@ const OnSpotBookings = ({ navigation }) => {
           }
         }
 
-        response = await axios.post('http://91.108.104.79:3000/api/onspot/booking/pay-token', {
+        response = await axios.post('https://sigiride.com/api/onspot/booking/pay-token', {
           booking_no: bookingNo,
         }, {
           headers: { Authorization: `Bearer ${loginToken}` },
@@ -238,7 +238,7 @@ const OnSpotBookings = ({ navigation }) => {
           }
         }
 
-        response = await axios.post('http://91.108.104.79:3000/api/onspot/booking/pay-full', {
+        response = await axios.post('https://sigiride.com/api/onspot/booking/pay-full', {
           booking_no: bookingNo,
           payment_mode: paymentMode,
         }, {
@@ -281,7 +281,7 @@ const OnSpotBookings = ({ navigation }) => {
 
     setIsLoading(true);
     try {
-      const response = await axios.post('http://91.108.104.79:3000/api/onspot/booking/cancel', {
+      const response = await axios.post('https://sigiride.com/api/onspot/booking/cancel', {
         booking_no: cancellingBooking.booking_no,
         cancel_reason: cancelReason.trim(),
       }, {

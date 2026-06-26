@@ -146,6 +146,8 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   const hasProfileImage = Boolean(profileImage);
+  console.log('profileImage===>',profileImage);
+const secureProfileImage = profileImage.replace('http://', 'https://');
 
   return (
     <View style={styles.container}>
@@ -177,7 +179,7 @@ const ProfileScreen = ({ navigation }) => {
                 activeOpacity={0.85}
               >
                 {hasProfileImage ? (
-                  <Image source={{ uri: profileImage }} style={styles.profileImage} />
+                  <Image source={{ uri: secureProfileImage }} style={styles.profileImage} />
                 ) : (
                   <View style={styles.profilePlaceholder}>
                     <Icon name="person" size={54} color="#FF1493" />

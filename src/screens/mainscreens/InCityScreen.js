@@ -387,7 +387,7 @@ const InCityScreen = ({ route, navigation }) => {
   const renderVehicle = (vehicle) => {
     const isSelected = selectedVehicle === vehicle.id;
     const imageUri = vehicle.image
-      ? `http://91.108.104.79:3000/uploads/subservice/${vehicle.image}`
+      ? `https://sigiride.com/uploads/subservice/${vehicle.image}`
       : null;
     const fare     = calculateFare(vehicle);
     const minKm    = parseFloat(vehicle.fixed_charge_km || 1);

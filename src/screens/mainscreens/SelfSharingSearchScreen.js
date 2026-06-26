@@ -19,7 +19,7 @@
 // import { GET_AVAILABLE_TRIPS } from '../../redux/actions/action-creator';
 // import axios from 'axios';
 
-// const API_BASE_URL = 'http://91.108.104.79:3000';
+// const API_BASE_URL = 'https://sigiride.com';
 
 // const SelfSharingSearchScreen = ({ navigation, route }) => {
 //   const { service_title, service_id } = route.params;
@@ -681,7 +681,7 @@ import { useDispatch } from 'react-redux';
 import { GET_AVAILABLE_TRIPS } from '../../redux/actions/action-creator';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://91.108.104.79:3000';
+const API_BASE_URL = 'https://sigiride.com';
 
 const SelfSharingSearchScreen = ({ navigation, route }) => {
   const { service_title, service_id } = route.params;

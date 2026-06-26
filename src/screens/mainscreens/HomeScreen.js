@@ -901,7 +901,7 @@ const HomeScreen = ({ navigation }) => {
                   {console.log('service', service)
                   }
                   <Image
-                    source={{ uri: `http://91.108.104.79:3000/uploads/services/${service.image}` }}
+                    source={{ uri: `https://sigiride.com/uploads/services/${service.image}` }}
                     style={styles.serviceImage}
                     resizeMode="contain"
                   />
