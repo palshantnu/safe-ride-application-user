@@ -32,7 +32,8 @@ import {
   GET_USER_BOOKING_HISTORY,
   GET_USER_PROFILE,
   GET_CURRENT_PARCEL_BOOKINGS,
-  GET_SELF_SHARING_BOOKINGS
+  GET_SELF_SHARING_BOOKINGS,
+  GET_ONSPOT_BOOKINGS
 } from '../../redux/actions/action-creator';
 import { IMAGE_URL } from '../../axios/axiosinstance';
 
@@ -42,6 +43,7 @@ const BOOKING_TYPE = {
   RIDE: 'ride',
   PARCEL: 'parcel',
   SELF_SHARING: 'selfSharing',
+  ON_SPOT: 'onSpot',
 };
 
 const toStatusKey = (status) => (status || '').toString().toUpperCase();
@@ -159,24 +161,28 @@ const HomeScreen = ({ navigation }) => {
 
   const fetchCurrentRide = async () => {
     try {
-      const [rideResult, parcelResult, selfSharingResult] = await Promise.allSettled([
+      const [rideResult, parcelResult, selfSharingResult, onSpotResult] = await Promise.allSettled([
         dispatch(GET_USER_CURRENT_BOOKING()),
         dispatch(GET_CURRENT_PARCEL_BOOKINGS()),
         dispatch(GET_SELF_SHARING_BOOKINGS('selfsharing', 1, 50)),
+        dispatch(GET_ONSPOT_BOOKINGS()),
       ]);
 
       const rideResponse = getSettledValue(rideResult);
       const parcelResponse = getSettledValue(parcelResult);
       const selfSharingResponse = getSettledValue(selfSharingResult);
+      const onSpotResponse = getSettledValue(onSpotResult);
 
       console.log('Current ride response:', rideResponse);
       console.log('Current parcel response:', parcelResponse);
       console.log('Current self sharing response:', selfSharingResponse);
+      console.log('Current on spot response:', onSpotResponse);
 
       const active = [
         ...mapCurrentBookings(rideResponse, BOOKING_TYPE.RIDE),
         ...mapCurrentBookings(parcelResponse, BOOKING_TYPE.PARCEL),
         ...mapCurrentBookings(selfSharingResponse, BOOKING_TYPE.SELF_SHARING),
+        ...mapCurrentBookings(onSpotResponse, BOOKING_TYPE.ON_SPOT),
       ];
 
       setActiveBookings(active);
@@ -274,6 +280,7 @@ const secureProfileImage = profileImageUri.replace('http://', 'https://');
     if (booking?.service_title) return booking.service_title;
     if (booking?.__bookingType === BOOKING_TYPE.PARCEL) return 'Parcel';
     if (booking?.__bookingType === BOOKING_TYPE.SELF_SHARING) return 'Self Sharing';
+    if (booking?.__bookingType === BOOKING_TYPE.ON_SPOT) return 'On Spot';
     return 'Ride';
   };
 
@@ -1170,12 +1177,146 @@ const secureProfileImage = profileImageUri.replace('http://', 'https://');
     );
   };
 
+  const renderActiveOnSpotBooking = (booking, index) => {
+    const status = getDisplayStatus(booking);
+    const statusKey = toStatusKey(status);
+    const address = joinLocationParts(booking?.full_address, booking?.landmark);
+    const scheduleDateTime = formatDateTimeValue(booking?.schedule_datetime);
+    const totalAmount = parseFloat(booking?.total_amount || 0);
+    const showOtp = booking?.otp && !['PENDING', 'COMPLETED', 'CANCELLED'].includes(statusKey);
+
+    return (
+      <Animated.View
+        key={booking?.booking_no || booking?.id || index}
+        style={[
+          styles.activeRideCard,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }]
+          }
+        ]}
+      >
+        {activeBookings.length > 1 && (
+          <Text style={styles.bookingIndexLabel}>Booking {index + 1} of {activeBookings.length}</Text>
+        )}
+
+        <View style={styles.cardHeader}>
+          <View style={styles.cardHeaderLeft}>
+            <Text style={styles.currentServiceName}>{getServiceName(booking)}</Text>
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(status) }]}>
+              <Text style={styles.statusBadgeText}>{getStatusText(status)}</Text>
+            </View>
+          </View>
+          <View>
+            <Text style={styles.fareLabel}>Total Amount</Text>
+            <Text style={styles.fareAmount}>₹{totalAmount.toFixed(0)}</Text>
+          </View>
+        </View>
+
+        <View style={styles.locationContainer}>
+          <View style={styles.locationEntryRow}>
+            <View style={styles.dotCol}>
+              <View style={styles.pickupDot} />
+              <View style={styles.locationLine} />
+            </View>
+            <View style={styles.locationTextCol}>
+              <Text style={styles.locationLabel}>Address</Text>
+              <Text style={styles.pickupText}>{address || 'On Spot location'}</Text>
+            </View>
+          </View>
+          <View style={styles.locationEntryRow}>
+            <View style={styles.dotCol}>
+              <View style={styles.toCityDot} />
+            </View>
+            <View style={styles.locationTextCol}>
+              <Text style={styles.locationLabel}>City</Text>
+              <Text style={styles.toCityText}>{booking?.city || '-'}</Text>
+            </View>
+          </View>
+        </View>
+
+        {scheduleDateTime ? (
+          <View style={styles.scheduleDateRow}>
+            <Icon name="calendar" size={14} color="#FF1493" />
+            <Text style={styles.scheduleDateText}>{scheduleDateTime}</Text>
+          </View>
+        ) : null}
+
+        <View style={styles.currentDetailsGrid}>
+          <View style={styles.currentDetailItem}>
+            <Icon name="hash" size={15} color="#666" />
+            <View style={styles.currentDetailTextWrap}>
+              <Text style={styles.currentDetailLabel}>Booking No</Text>
+              <Text style={styles.currentDetailValue}>{booking?.booking_no || '-'}</Text>
+            </View>
+          </View>
+          <View style={styles.currentDetailItem}>
+            <Icon name="briefcase" size={15} color="#666" />
+            <View style={styles.currentDetailTextWrap}>
+              <Text style={styles.currentDetailLabel}>Plan</Text>
+              <Text style={styles.currentDetailValue}>{booking?.plan_name || '-'}</Text>
+            </View>
+          </View>
+          <View style={styles.currentDetailItem}>
+            <FontAwesome5 name="rupee-sign" size={13} color="#666" />
+            <View style={styles.currentDetailTextWrap}>
+              <Text style={styles.currentDetailLabel}>Token</Text>
+              <Text style={styles.currentDetailValue}>₹{booking?.token_amount || '0.00'}</Text>
+            </View>
+          </View>
+          <View style={styles.currentDetailItem}>
+            <FontAwesome5 name="rupee-sign" size={13} color="#666" />
+            <View style={styles.currentDetailTextWrap}>
+              <Text style={styles.currentDetailLabel}>Balance</Text>
+              <Text style={styles.currentDetailValue}>₹{booking?.balance_amount || '0.00'}</Text>
+            </View>
+          </View>
+        </View>
+
+        {booking?.driver_id ? (
+          <View style={styles.driverInfo}>
+            <View style={styles.driverDetail}>
+              <FontAwesome5 name="user-circle" size={16} color="#FF1493" />
+              <Text style={styles.driverText}>Driver Assigned</Text>
+            </View>
+            <Text style={styles.driverText}>ID: {booking.driver_id}</Text>
+          </View>
+        ) : null}
+
+        {showOtp ? (
+          <View style={styles.otpContainer}>
+            <Text style={styles.otpLabel}>On Spot OTP</Text>
+            <Text style={styles.otpValue}>{booking.otp}</Text>
+          </View>
+        ) : null}
+
+        {booking?.remarks ? (
+          <View style={styles.scheduleDateRow}>
+            <Icon name="message-square" size={14} color="#FF1493" />
+            <Text style={styles.scheduleDateText}>{booking.remarks}</Text>
+          </View>
+        ) : null}
+
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => navigation.navigate('OnSpotBookings')}
+        >
+          <Icon name="arrow-right-circle" size={16} color="#fff" />
+          <Text style={styles.actionButtonText}>Continue Booking</Text>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+
   const renderActiveBooking = (booking, index) => {
     if (booking?.__bookingType === BOOKING_TYPE.PARCEL) {
       return renderActiveParcelBooking(booking, index);
     }
     if (booking?.__bookingType === BOOKING_TYPE.SELF_SHARING) {
       return renderActiveSelfSharingBooking(booking, index);
+    }
+    if (booking?.__bookingType === BOOKING_TYPE.ON_SPOT) {
+      return renderActiveOnSpotBooking(booking, index);
     }
     return renderActiveRide(booking, index);
   };

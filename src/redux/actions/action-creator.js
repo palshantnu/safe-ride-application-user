@@ -367,6 +367,20 @@ export const GET_CURRENT_PARCEL_BOOKINGS = () => (dispatch) => {
     });
 };
 
+// GET USER ON SPOT BOOKINGS
+export const GET_ONSPOT_BOOKINGS = () => (dispatch) => {
+  return axiosinstance.get('/onspot/my-bookings')
+    .then((response) => {
+      return response.data;
+    })
+    .catch((error) => {
+      console.log('GET_ONSPOT_BOOKINGS Error:', error);
+      console.log('error', error.response?.data);
+      console.log('status', error.response?.status);
+      return { status: false, message: error.message, data: [] };
+    });
+};
+
 // Parcel Pay Token
 export const PAY_PARCEL_TOKEN = (payload) => async (dispatch) => {
   dispatch({ type: types.PAY_PARCEL_TOKEN_REQUEST });
@@ -699,7 +713,7 @@ export const CREATE_ONSPOT_BOOKING =
 
       console.log(
         'CREATE_ONSPOT_BOOKING Error',
-        error,
+        error.response?.data,
       );
 
       dispatch({
