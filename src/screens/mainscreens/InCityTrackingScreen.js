@@ -150,7 +150,7 @@ const InCityTrackingScreen = ({ route, navigation }) => {
           onPress: async () => {
             setCancelling(true);
             try {
-              const res = await dispatch(CANCEL_BOOKING({ booking_id: booking.booking_id }));
+              const res = await dispatch(CANCEL_BOOKING({ booking_id: booking.booking_id,role:"USER" }));
               if (res?.status) {
                 navigation.goBack();
               } else {
@@ -308,8 +308,8 @@ const InCityTrackingScreen = ({ route, navigation }) => {
 
         {/* Cancel button — always visible */}
         {console.log('booking.status', booking.status)}
-        {(booking.status === 'ARRIVED' || booking.status === 'ACCEPTED') &&
-          (
+        {/* {(booking.status === 'ARRIVED' || booking.status === 'ACCEPTED') &&
+          ( */}
           <TouchableOpacity
             style={styles.cancelBtn}
             onPress={handleCancel}
@@ -319,7 +319,7 @@ const InCityTrackingScreen = ({ route, navigation }) => {
               ? <ActivityIndicator color="#fff" />
               : <><Icon name="x-circle" size={18} color="#fff" /><Text style={styles.cancelText}>Cancel Ride</Text></>}
           </TouchableOpacity>
-        )}
+        {/* )} */}
 
         {booking.status === 'COMPLETED' && (
           <TouchableOpacity style={styles.doneBtn} onPress={() => navigation.goBack()}>

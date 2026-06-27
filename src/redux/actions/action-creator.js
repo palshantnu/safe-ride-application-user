@@ -353,6 +353,20 @@ export const GET_MY_PARCELS = (page = 1, limit = 10) => (dispatch) => {
     });
 };
 
+// GET USER CURRENT PARCEL BOOKINGS
+export const GET_CURRENT_PARCEL_BOOKINGS = () => (dispatch) => {
+  return axiosinstance.get('/parcel/current-booking')
+    .then((response) => {
+      return response.data;
+    })
+    .catch((error) => {
+      console.log('GET_CURRENT_PARCEL_BOOKINGS Error:', error);
+      console.log('error', error.response?.data);
+      console.log('status', error.response?.status);
+      return { status: false, message: error.message, data: [] };
+    });
+};
+
 // Parcel Pay Token
 export const PAY_PARCEL_TOKEN = (payload) => async (dispatch) => {
   dispatch({ type: types.PAY_PARCEL_TOKEN_REQUEST });

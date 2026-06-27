@@ -14,7 +14,8 @@ import {
   StatusBar,
   TextInput,
   Modal,
-  RefreshControl
+  RefreshControl,
+  Linking
 } from 'react-native';
 import RazorpayCheckout from 'react-native-razorpay';
 import LinearGradient from 'react-native-linear-gradient';
@@ -29,11 +30,44 @@ import {
   CANCEL_BOOKING,
   PAY_TOPUP_AMOUNT,
   GET_USER_BOOKING_HISTORY,
-  GET_USER_PROFILE
+  GET_USER_PROFILE,
+  GET_CURRENT_PARCEL_BOOKINGS,
+  GET_SELF_SHARING_BOOKINGS
 } from '../../redux/actions/action-creator';
 import { IMAGE_URL } from '../../axios/axiosinstance';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
+
+const BOOKING_TYPE = {
+  RIDE: 'ride',
+  PARCEL: 'parcel',
+  SELF_SHARING: 'selfSharing',
+};
+
+const toStatusKey = (status) => (status || '').toString().toUpperCase();
+
+const formatStatusLabel = (status) => {
+  const value = (status || '').toString();
+  if (!value) return 'Processing';
+  return value
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const isTerminalStatus = (status) => {
+  const value = toStatusKey(status);
+  return (
+    value.includes('CANCEL') ||
+    value.includes('COMPLETE') ||
+    value.includes('DELIVERED')
+  );
+};
+
+const asArray = (data) => {
+  if (Array.isArray(data)) return data;
+  return data ? [data] : [];
+};
 
 const HomeScreen = ({ navigation }) => {
   const [activeBookings, setActiveBookings] = useState([]);
@@ -80,7 +114,7 @@ const HomeScreen = ({ navigation }) => {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -99,19 +133,54 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
+  const getSettledValue = (result) => {
+    if (result?.status === 'fulfilled') return result.value;
+    return null;
+  };
+
+  const isActiveBooking = (booking) => {
+    const statuses = [
+      booking?.status,
+      booking?.trip_status,
+      booking?.user_status,
+      booking?.driver_status,
+    ];
+    return !statuses.some(isTerminalStatus);
+  };
+
+  const mapCurrentBookings = (response, bookingType) => {
+    return asArray(response?.data)
+      .filter(isActiveBooking)
+      .map((booking) => ({
+        ...booking,
+        __bookingType: bookingType,
+      }));
+  };
+
   const fetchCurrentRide = async () => {
     try {
-      const res = await dispatch(GET_USER_CURRENT_BOOKING());
-      console.log('Current ride response:', res);
+      const [rideResult, parcelResult, selfSharingResult] = await Promise.allSettled([
+        dispatch(GET_USER_CURRENT_BOOKING()),
+        dispatch(GET_CURRENT_PARCEL_BOOKINGS()),
+        dispatch(GET_SELF_SHARING_BOOKINGS('selfsharing', 1, 50)),
+      ]);
 
-      if (res?.status && res?.data) {
-        const raw = Array.isArray(res.data) ? res.data : [res.data];
-        const active = raw.filter(b => !['COMPLETED', 'CANCELLED'].includes(b.status));
-        setActiveBookings(active);
-        if (active.length > 0) animateRequest();
-      } else {
-        setActiveBookings([]);
-      }
+      const rideResponse = getSettledValue(rideResult);
+      const parcelResponse = getSettledValue(parcelResult);
+      const selfSharingResponse = getSettledValue(selfSharingResult);
+
+      console.log('Current ride response:', rideResponse);
+      console.log('Current parcel response:', parcelResponse);
+      console.log('Current self sharing response:', selfSharingResponse);
+
+      const active = [
+        ...mapCurrentBookings(rideResponse, BOOKING_TYPE.RIDE),
+        ...mapCurrentBookings(parcelResponse, BOOKING_TYPE.PARCEL),
+        ...mapCurrentBookings(selfSharingResponse, BOOKING_TYPE.SELF_SHARING),
+      ];
+
+      setActiveBookings(active);
+      if (active.length > 0) animateRequest();
     } catch (error) {
       console.log('Error fetching current ride:', error);
       setActiveBookings([]);
@@ -164,7 +233,7 @@ const HomeScreen = ({ navigation }) => {
       });
     }, 3000);
     return () => clearInterval(timer);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const animateRequest = () => {
     Animated.parallel([
@@ -197,6 +266,67 @@ const HomeScreen = ({ navigation }) => {
 
   const profileImageUri = profileImageError ? '' : getProfileImageUri();
   const displayName = user?.name || profileData?.name || 'Guest User';
+
+  console.log('profileImageUri',profileImageUri)
+const secureProfileImage = profileImageUri.replace('http://', 'https://');
+  const getServiceName = (booking) => {
+    if (booking?.service_name) return booking.service_name;
+    if (booking?.service_title) return booking.service_title;
+    if (booking?.__bookingType === BOOKING_TYPE.PARCEL) return 'Parcel';
+    if (booking?.__bookingType === BOOKING_TYPE.SELF_SHARING) return 'Self Sharing';
+    return 'Ride';
+  };
+
+  const getDisplayStatus = (booking) => {
+    if (booking?.__bookingType === BOOKING_TYPE.SELF_SHARING) {
+      return booking?.trip_status || booking?.status;
+    }
+    return booking?.status || booking?.driver_status || booking?.user_status;
+  };
+
+  const formatDateTimeValue = (value) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+  };
+
+  const formatPickupDateTime = (dateValue, timeValue) => {
+    if (!dateValue) return '';
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return '';
+
+    const formattedDate = date.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+
+    if (!timeValue) return formattedDate;
+
+    const [hours, minutes] = timeValue.toString().split(':');
+    const time = new Date();
+    time.setHours(parseInt(hours, 10));
+    time.setMinutes(parseInt(minutes, 10));
+    if (Number.isNaN(time.getTime())) return formattedDate;
+
+    return `${formattedDate} • ${time.toLocaleTimeString('en-IN', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    })}`;
+  };
+
+  const joinLocationParts = (...parts) => {
+    return parts.filter(Boolean).join(', ');
+  };
 
   const handleTokenPayment = (booking) => {
     setSelectedBooking(booking);
@@ -278,7 +408,7 @@ const HomeScreen = ({ navigation }) => {
     setIsLoading(true);
     try {
       if (selectedPaymentMode === 'ONLINE') {
-        const isPaymentDone = await runOnlinePaymentGateway(parseInt(remainingAmount) - parseInt(token_amount));
+        const isPaymentDone = await runOnlinePaymentGateway(parseInt(remainingAmount, 10) - parseInt(token_amount, 10));
         if (!isPaymentDone) {
           return;
         }
@@ -383,6 +513,7 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const getStatusColor = (status) => {
+    const key = toStatusKey(status);
     const colors = {
       'SEARCHING': '#FF9800',
       'ACCEPTED': '#4CAF50',
@@ -392,13 +523,22 @@ const HomeScreen = ({ navigation }) => {
       'TOPUP_PENDING': '#FF9800',
       'WAITING_FOR_PAYMENT': '#F59E0B',
       'PAYMENT_DONE': '#8B5CF6',
+      'PENDING': '#FF9800',
+      'BOARDING': '#2196F3',
+      'UPCOMING': '#8B5CF6',
+      'ASSIGNED': '#4CAF50',
+      'CONFIRMED': '#4CAF50',
       'COMPLETED': '#9E9E9E',
-      'CANCELLED': '#F44336'
+      'CANCELLED': '#F44336',
+      'DELIVERED': '#4CAF50',
     };
-    return colors[status] || '#757575';
+    if (key.includes('CANCEL')) return '#F44336';
+    if (key.includes('COMPLETE') || key.includes('DELIVERED')) return '#4CAF50';
+    return colors[key] || '#757575';
   };
 
   const getStatusText = (status) => {
+    const key = toStatusKey(status);
     const texts = {
       'SEARCHING': 'Searching for driver...',
       'ACCEPTED': 'Driver Assigned',
@@ -408,10 +548,16 @@ const HomeScreen = ({ navigation }) => {
       'TOPUP_PENDING': 'Topup Required',
       'WAITING_FOR_PAYMENT': 'Payment Due',
       'PAYMENT_DONE': 'Waiting for Confirmation',
+      'PENDING': 'Pending',
+      'BOARDING': 'Boarding',
+      'UPCOMING': 'Upcoming',
+      'ASSIGNED': 'Assigned',
+      'CONFIRMED': 'Confirmed',
       'COMPLETED': 'Completed',
-      'CANCELLED': 'Cancelled'
+      'CANCELLED': 'Cancelled',
+      'DELIVERED': 'Delivered',
     };
-    return texts[status] || status;
+    return texts[key] || formatStatusLabel(status);
   };
 
   const getActionButton = (booking) => {
@@ -485,7 +631,7 @@ const HomeScreen = ({ navigation }) => {
                 <>
                   <FontAwesome5 name="rupee-sign" size={16} color="#fff" />
                   <Text style={styles.actionButtonText}>
-                    Pay Remaining ₹{parseInt(booking?.plan_price) - parseInt(booking?.token_amount)}
+                    Pay Remaining ₹{parseInt(booking?.plan_price, 10) - parseInt(booking?.token_amount, 10)}
                   </Text>
                 </>
               )}
@@ -615,14 +761,15 @@ const HomeScreen = ({ navigation }) => {
   const renderActiveRide = (booking, index) => {
     console.log('booking===>',booking);
     
-    const pickupLocation = booking?.pickup_address || booking?.pickup_city;
-    const dropLocation = booking?.drop_address || booking?.drop_city;
-    const status = booking?.status;
-    const showDriverInfo = ['TOKEN_PAID', 'ARRIVED', 'STARTED'].includes(status);
-    const showOtp = status === 'ARRIVED' || status === 'BALANCE_PAID';
+    const ridePickupLocation = booking?.pickup_address || booking?.pickup_city;
+    const rideDropLocation = booking?.drop_address || booking?.drop_city;
+    const status = getDisplayStatus(booking);
+    const statusKey = toStatusKey(status);
+    const showDriverInfo = ['TOKEN_PAID', 'ARRIVED', 'STARTED'].includes(statusKey);
+    const showOtp = statusKey === 'ARRIVED' || statusKey === 'BALANCE_PAID';
 
     const totalTopupAmount = booking?.topups?.reduce((sum, t) => sum + parseFloat(t.topup_amount), 0) || 0;
-    const totalFare = parseFloat(booking?.plan_price) + totalTopupAmount;
+    const totalFare = parseFloat(booking?.total_fare) + totalTopupAmount;
 
     return (
       <Animated.View
@@ -640,11 +787,24 @@ const HomeScreen = ({ navigation }) => {
         )}
 
         <View style={styles.cardHeader}>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(status) }]}>
-            <Text style={styles.statusBadgeText}>{getStatusText(status)}</Text>
+          <View style={styles.cardHeaderLeft}>
+            <Text style={styles.currentServiceName}>{getServiceName(booking)}</Text>
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(status) }]}>
+              <Text style={styles.statusBadgeText}>{getStatusText(status)}</Text>
+            </View>
           </View>
           {booking?.is_incity ? (
-            <Text style={styles.fareLabel}>In City Ride</Text>
+            <View style={{marginBottom:10}}>
+           
+              <Text style={{...styles.fareAmount,marginBottom:10}}>₹{booking.total_fare}</Text>
+             
+            
+                      <View style={{...styles.requestBadge,backgroundColor:'#2196F3',}}>
+      <Icon name="bell" size={16} color="#fff" />
+      <Text style={styles.requestBadgeText}>In City Ride</Text>
+      </View>
+      </View>
+              
           ) : (
             <View>
               <Text style={styles.fareLabel}>Total Fare</Text>
@@ -664,7 +824,7 @@ const HomeScreen = ({ navigation }) => {
             </View>
             <View style={styles.locationTextCol}>
               <Text style={styles.locationLabel}>Pickup</Text>
-              <Text style={styles.pickupText}>{pickupLocation || 'Pickup location'}</Text>
+              <Text style={styles.pickupText}>{ridePickupLocation || 'Pickup location'}</Text>
             </View>
           </View>
           <View style={styles.locationEntryRow}>
@@ -675,7 +835,7 @@ const HomeScreen = ({ navigation }) => {
             </View>
             <View style={styles.locationTextCol}>
               <Text style={styles.locationLabel}>Drop</Text>
-              <Text style={styles.dropText}>{dropLocation || 'Drop location'}</Text>
+              <Text style={styles.dropText}>{rideDropLocation || 'Drop location'}</Text>
             </View>
           </View>
           {booking?.service_name?.includes('Rental') && booking?.to_city ? (
@@ -718,7 +878,7 @@ const HomeScreen = ({ navigation }) => {
           <View style={styles.rideInfo}>
             <View style={styles.infoItem}>
               <Icon name="info" size={16} color="#FF9800" />
-              <Text style={[styles.infoText, { color: '#FF9800', flex: 1 }]}>
+              <Text style={[styles.infoText, styles.inCityFareNoteText]}>
                 {booking?.fare_note || 'Fare will be calculated on meter at trip end'}
               </Text>
             </View>
@@ -746,10 +906,10 @@ const HomeScreen = ({ navigation }) => {
               <FontAwesome5 name="user-circle" size={16} color="#FF1493" />
               <Text style={styles.driverText}>{booking?.driver_name}</Text>
             </View>
-            <View style={styles.driverDetail}>
+            <TouchableOpacity onPress={() => Linking.openURL(`tel:${booking?.driver_mobile}`)} style={styles.driverDetail}>
               <FontAwesome5 name="phone" size={14} color="#FF1493" />
               <Text style={styles.driverText}>{booking?.driver_mobile}</Text>
-            </View>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -768,17 +928,259 @@ const HomeScreen = ({ navigation }) => {
     );
   };
 
-  const renderActiveRides = () => activeBookings.map((booking, index) => renderActiveRide(booking, index));
+  const renderActiveParcelBooking = (booking, index) => {
+    const status = getDisplayStatus(booking);
+    const parcelPickupLocation = joinLocationParts(
+      booking?.pickup_address,
+      booking?.pickup_landmark,
+      booking?.pickup_city,
+    );
+    const parcelDropLocation = joinLocationParts(
+      booking?.drop_address,
+      booking?.drop_landmark,
+      booking?.drop_city,
+    );
+    const amount = parseFloat(booking?.amount || 0);
+    const pickupDateTime = formatPickupDateTime(booking?.pickup_date, booking?.pickup_time);
+    const showPickupOtp = Number(booking?.pickup_otp_verified) === 0;
+    const otp = showPickupOtp ? booking?.pickup_otp : booking?.delivery_otp;
+    const otpLabel = showPickupOtp ? 'Pickup OTP' : 'Delivery OTP';
 
-  const serviceImageMap = {
-    'In City': 'https://cdn-icons-png.flaticon.com/128/809/809998.png',
-    'Rental': 'https://cdn-icons-png.flaticon.com/128/3156/3156200.png',
-    'Self Sharing': 'https://cdn-icons-png.flaticon.com/128/4234/4234147.png',
-    'One Way': 'https://cdn-icons-png.flaticon.com/128/8371/8371043.png',
-    'Driver': 'https://cdn-icons-png.flaticon.com/128/4900/4900915.png',
-    'Intercity sharing car': 'https://cdn-icons-png.flaticon.com/128/9835/9835774.png',
+    return (
+      <Animated.View
+        key={booking?.parcel_booking_id || booking?.id || index}
+        style={[
+          styles.activeRideCard,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }]
+          }
+        ]}
+      >
+        {activeBookings.length > 1 && (
+          <Text style={styles.bookingIndexLabel}>Booking {index + 1} of {activeBookings.length}</Text>
+        )}
+
+        <View style={styles.cardHeader}>
+          <View style={styles.cardHeaderLeft}>
+            <Text style={styles.currentServiceName}>{getServiceName(booking)}</Text>
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(status) }]}>
+              <Text style={styles.statusBadgeText}>{getStatusText(status)}</Text>
+            </View>
+          </View>
+          <View>
+            <Text style={styles.fareLabel}>Total Amount</Text>
+            <Text style={styles.fareAmount}>₹{amount.toFixed(0)}</Text>
+          </View>
+        </View>
+
+        <View style={styles.locationContainer}>
+          <View style={styles.locationEntryRow}>
+            <View style={styles.dotCol}>
+              <View style={styles.pickupDot} />
+              <View style={styles.locationLine} />
+            </View>
+            <View style={styles.locationTextCol}>
+              <Text style={styles.locationLabel}>Pickup</Text>
+              <Text style={styles.pickupText}>{parcelPickupLocation || 'Pickup location'}</Text>
+            </View>
+          </View>
+          <View style={styles.locationEntryRow}>
+            <View style={styles.dotCol}>
+              <View style={styles.dropDot} />
+            </View>
+            <View style={styles.locationTextCol}>
+              <Text style={styles.locationLabel}>Drop</Text>
+              <Text style={styles.dropText}>{parcelDropLocation || 'Drop location'}</Text>
+            </View>
+          </View>
+        </View>
+
+        {pickupDateTime ? (
+          <View style={styles.scheduleDateRow}>
+            <Icon name="calendar" size={14} color="#FF1493" />
+            <Text style={styles.scheduleDateText}>{pickupDateTime}</Text>
+          </View>
+        ) : null}
+
+        <View style={styles.currentDetailsGrid}>
+          <View style={styles.currentDetailItem}>
+            <Icon name="info" size={15} color="#666" />
+            <View style={styles.currentDetailTextWrap}>
+              <Text style={styles.currentDetailLabel}>Booking Status</Text>
+              <Text style={styles.currentDetailValue}>{getStatusText(status)}</Text>
+            </View>
+          </View>
+          <View style={styles.currentDetailItem}>
+            <FontAwesome5 name="people-carry" size={13} color="#666" />
+            <View style={styles.currentDetailTextWrap}>
+              <Text style={styles.currentDetailLabel}>Loading/Unloading</Text>
+              <Text style={styles.currentDetailValue}>{booking?.loading_unloading || '-'}</Text>
+            </View>
+          </View>
+          <View style={styles.currentDetailItem}>
+            <Icon name="message-square" size={15} color="#666" />
+            <View style={styles.currentDetailTextWrap}>
+              <Text numberOfLines={1} style={styles.currentDetailLabel}>Remarks</Text>
+              <Text style={styles.currentDetailValue}>{booking?.remarks || '-'}</Text>
+            </View>
+          </View>
+          <View style={styles.currentDetailItem}>
+            <FontAwesome5 name="weight-hanging" size={13} color="#666" />
+            <View style={styles.currentDetailTextWrap}>
+              <Text style={styles.currentDetailLabel}>Weight</Text>
+              <Text style={styles.currentDetailValue}>
+                {booking?.approx_weight ? `${booking.approx_weight} kg` : '-'}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {otp ? (
+          <View style={styles.otpContainer}>
+            <Text style={styles.otpLabel}>{otpLabel}</Text>
+            <Text style={styles.otpValue}>{otp}</Text>
+          </View>
+        ) : null}
+
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => navigation.navigate('MyParcels')}
+        >
+          <Icon name="arrow-right-circle" size={16} color="#fff" />
+          <Text style={styles.actionButtonText}>Continue Booking</Text>
+        </TouchableOpacity>
+      </Animated.View>
+    );
   };
-  const defaultImage = 'https://cdn-icons-png.flaticon.com/128/565/565547.png';
+
+  const renderActiveSelfSharingBooking = (booking, index) => {
+    const status = getDisplayStatus(booking);
+    const sharingPickupLocation = joinLocationParts(booking?.from_city, booking?.pickup_address);
+    const sharingDropLocation = booking?.to_city;
+    const departureDateTime = formatDateTimeValue(booking?.departure_time);
+    const fare = parseFloat(booking?.total_fare || 0);
+
+    return (
+      <Animated.View
+        key={booking?.booking_id || booking?.id || index}
+        style={[
+          styles.activeRideCard,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }]
+          }
+        ]}
+      >
+        {activeBookings.length > 1 && (
+          <Text style={styles.bookingIndexLabel}>Booking {index + 1} of {activeBookings.length}</Text>
+        )}
+
+        <View style={styles.cardHeader}>
+          <View style={styles.cardHeaderLeft}>
+            <Text style={styles.currentServiceName}>{getServiceName(booking)}</Text>
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(status) }]}>
+              <Text style={styles.statusBadgeText}>{getStatusText(status)}</Text>
+            </View>
+          </View>
+          <View>
+            <Text style={styles.fareLabel}>Total Fare</Text>
+            <Text style={styles.fareAmount}>₹{fare.toFixed(0)}</Text>
+          </View>
+        </View>
+
+        <View style={styles.locationContainer}>
+          <View style={styles.locationEntryRow}>
+            <View style={styles.dotCol}>
+              <View style={styles.pickupDot} />
+              <View style={styles.locationLine} />
+            </View>
+            <View style={styles.locationTextCol}>
+              <Text style={styles.locationLabel}>Pickup</Text>
+              <Text style={styles.pickupText}>{sharingPickupLocation || 'Pickup location'}</Text>
+            </View>
+          </View>
+          <View style={styles.locationEntryRow}>
+            <View style={styles.dotCol}>
+              <View style={styles.dropDot} />
+            </View>
+            <View style={styles.locationTextCol}>
+              <Text style={styles.locationLabel}>Drop</Text>
+              <Text style={styles.dropText}>{sharingDropLocation || 'Drop location'}</Text>
+            </View>
+          </View>
+        </View>
+
+        {departureDateTime ? (
+          <View style={styles.scheduleDateRow}>
+            <Icon name="calendar" size={14} color="#FF1493" />
+            <Text style={styles.scheduleDateText}>{departureDateTime}</Text>
+          </View>
+        ) : null}
+
+        <View style={styles.currentDetailsGrid}>
+          <View style={styles.currentDetailItem}>
+            <Icon name="info" size={15} color="#666" />
+            <View style={styles.currentDetailTextWrap}>
+              <Text style={styles.currentDetailLabel}>Booking Status</Text>
+              <Text style={styles.currentDetailValue}>{formatStatusLabel(booking?.status)}</Text>
+            </View>
+          </View>
+          <View style={styles.currentDetailItem}>
+            <Icon name="navigation" size={15} color="#666" />
+            <View style={styles.currentDetailTextWrap}>
+              <Text style={styles.currentDetailLabel}>Trip Status</Text>
+              <Text style={styles.currentDetailValue}>{formatStatusLabel(booking?.trip_status)}</Text>
+            </View>
+          </View>
+          <View style={styles.currentDetailItem}>
+            <FontAwesome5 name="chair" size={13} color="#666" />
+            <View style={styles.currentDetailTextWrap}>
+              <Text style={styles.currentDetailLabel}>Seats</Text>
+              <Text style={styles.currentDetailValue}>{booking?.seats || '-'}</Text>
+            </View>
+          </View>
+          <View style={styles.currentDetailItem}>
+            <FontAwesome5 name="rupee-sign" size={13} color="#666" />
+            <View style={styles.currentDetailTextWrap}>
+              <Text style={styles.currentDetailLabel}>Balance</Text>
+              <Text style={styles.currentDetailValue}>₹{booking?.balance_amount || '0.00'}</Text>
+            </View>
+          </View>
+        </View>
+
+        {booking?.otp ? (
+          <View style={styles.otpContainer}>
+            <Text style={styles.otpLabel}>Booking OTP</Text>
+            <Text style={styles.otpValue}>{booking.otp}</Text>
+          </View>
+        ) : null}
+
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => navigation.navigate('MyBookings', {
+            service_title: 'Self Sharing',
+            serviceType: 'selfsharing',
+          })}
+        >
+          <Icon name="arrow-right-circle" size={16} color="#fff" />
+          <Text style={styles.actionButtonText}>Continue Booking</Text>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+
+  const renderActiveBooking = (booking, index) => {
+    if (booking?.__bookingType === BOOKING_TYPE.PARCEL) {
+      return renderActiveParcelBooking(booking, index);
+    }
+    if (booking?.__bookingType === BOOKING_TYPE.SELF_SHARING) {
+      return renderActiveSelfSharingBooking(booking, index);
+    }
+    return renderActiveRide(booking, index);
+  };
+
+  const renderActiveRides = () => activeBookings.map((booking, index) => renderActiveBooking(booking, index));
 
   const handleServicePress = (service) => {
     if (service?.title === 'In City') {
@@ -845,7 +1247,7 @@ const HomeScreen = ({ navigation }) => {
               >
                 {profileImageUri ? (
                   <Image
-                    source={{ uri: profileImageUri }}
+                    source={{ uri: secureProfileImage }}
                     style={styles.headerProfileImage}
                     onError={() => setProfileImageError(true)}
                   />
@@ -871,7 +1273,7 @@ const HomeScreen = ({ navigation }) => {
         }
       >
         {/* Active Bookings */}
- {activeBookings.length >0 && <View style={{...styles.section,marginBottom:-20}}>
+ {activeBookings.length >0 && <View style={[styles.section, styles.activeBookingsHeaderSection]}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>My Bookings</Text>
           </View>
@@ -1159,7 +1561,7 @@ const HomeScreen = ({ navigation }) => {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Pay Remaining Balance</Text>
             <Text style={styles.modalSubtitle}>
-              Amount: ₹{parseInt(selectedBooking?.plan_price) - parseInt(selectedBooking?.token_amount)}
+              Amount: ₹{parseInt(selectedBooking?.plan_price, 10) - parseInt(selectedBooking?.token_amount, 10)}
             </Text>
 
             <Text style={styles.paymentModeTitle}>Select Payment Mode</Text>
@@ -1431,7 +1833,18 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 15,
   },
+  cardHeaderLeft: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  currentServiceName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1A2B4E',
+    marginBottom: 8,
+  },
   statusBadge: {
+    alignSelf: 'flex-start',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
@@ -1538,6 +1951,40 @@ const styles = StyleSheet.create({
   infoText: {
     fontSize: 14,
     color: '#666',
+  },
+  inCityFareNoteText: {
+    color: '#FF9800',
+    flex: 1,
+  },
+  currentDetailsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 14,
+  },
+  currentDetailItem: {
+    width: (width - 90) / 2,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 10,
+    padding: 10,
+  },
+  currentDetailTextWrap: {
+    flex: 1,
+  },
+  currentDetailLabel: {
+    fontSize: 10,
+    color: '#999',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  currentDetailValue: {
+    fontSize: 12,
+    color: '#333',
+    fontWeight: '600',
   },
   driverInfo: {
     flexDirection: 'row',
@@ -1674,6 +2121,9 @@ const styles = StyleSheet.create({
   section: {
     paddingHorizontal: 15,
     paddingTop: 10,
+  },
+  activeBookingsHeaderSection: {
+    marginBottom: -20,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -2100,6 +2550,8 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
   },
+    requestBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FF1493', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  requestBadgeText: { color: '#fff', fontSize: 12, fontWeight: '600', marginLeft: 6 },
 });
 
 export default HomeScreen;

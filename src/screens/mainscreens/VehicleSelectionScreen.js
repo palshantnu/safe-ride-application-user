@@ -1459,7 +1459,7 @@
 // });
 
 // export default VehicleSelectionScreen;
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect ,useRef} from 'react';
 import {
   View,
   Text,
@@ -1506,6 +1506,9 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
 
   const isRental = service_title?.toLowerCase() === 'rental' || service_title === 'Driver';
   const dispatch = useDispatch();
+const scrollViewRef = useRef(null);
+const detailsSectionY = useRef(0);
+
 
   const {
     subServices,
@@ -1647,8 +1650,23 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
     setSelectedVehicle(vehicle);
     setSelectedPlan(null);
     dispatch(GET_PLANS(service_id, vehicle.id));
+    setTimeout(() => {
+    scrollViewRef.current?.scrollTo({
+      y: detailsSectionY.current,
+      animated: true,
+    });
+  }, 300);
   };
-
+useEffect(() => {
+  if (selectedVehicle) {
+    requestAnimationFrame(() => {
+      scrollViewRef.current?.scrollTo({
+        y: detailsSectionY.current,
+        animated: true,
+      });
+    });
+  }
+}, [selectedVehicle]);
   const formatDateTime = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -1697,6 +1715,10 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
         Alert.alert('Validation Error', 'Please enter full address');
         return false;
       }
+      if (!landmark.trim()) {
+        Alert.alert('Validation Error', 'Please enter landmark');
+        return false;
+      }
       return true;
     }
     if (!selectedVehicle) {
@@ -1731,7 +1753,7 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
         sub_service_id: selectedVehicle.id,
         plan_id: selectedPlan.id,
         city,
-        schedule_datetime: formatDateTime(scheduleDate),
+        schedule_datetime: scheduleDate.toISOString(),
         full_address: fullAddress,
         landmark,
         remarks,
@@ -1751,7 +1773,7 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
       to_city: toCity,
       person,
       plan_id: selectedPlan.id,
-      schedule_date: formatDateTime(scheduleDate),
+      schedule_date: scheduleDate.toISOString(),
     };
     console.log('bookingData-->', bookingData);
     dispatch(CREATE_BOOKING(bookingData));
@@ -1971,6 +1993,7 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
+          ref={scrollViewRef}
         >
           {/* Vehicle Selection */}
           <View style={styles.section}>
@@ -1995,7 +2018,10 @@ const VehicleSelectionScreen = ({ route, navigation }) => {
           {/* Trip Details Form — shown after vehicle selected */}
           {selectedVehicle && (
             <>
-              <View style={styles.section}>
+              <View style={styles.section}
+               onLayout={(event) => {
+        detailsSectionY.current = event.nativeEvent.layout.y;
+      }}>
                 <Text style={styles.sectionTitle}> {isOnSpot ? 'Details' : 'Trip Details'}</Text>
 
                 {isOnSpot ? (

@@ -1285,7 +1285,7 @@
 
 // export default ParcelVehicleSelectionScreen;
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -1338,6 +1338,8 @@ const ParcelVehicleSelectionScreen = ({ route, navigation }) => {
     bookingSuccess,
     bookingError,
   } = useSelector((state) => state.common);
+const scrollViewRef = useRef(null);
+const detailsSectionY = useRef(0);
 
   const [selectedSubService, setSelectedSubService] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -1536,8 +1538,23 @@ const ParcelVehicleSelectionScreen = ({ route, navigation }) => {
     setSelectedSubService(item);
     setSelectedPlan(null);
     dispatch(GET_PLANS(service_id, item.id));
+    setTimeout(() => {
+    scrollViewRef.current?.scrollTo({
+      y: detailsSectionY.current,
+      animated: true,
+    });
+  }, 300);
   };
-
+useEffect(() => {
+  if (selectedSubService) {
+    requestAnimationFrame(() => {
+      scrollViewRef.current?.scrollTo({
+        y: detailsSectionY.current,
+        animated: true,
+      });
+    });
+  }
+}, [selectedSubService]);
   const handleSubmitBooking = () => {
     if (!validateForm()) return;
 
@@ -1766,7 +1783,7 @@ const ParcelVehicleSelectionScreen = ({ route, navigation }) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <ScrollView  ref={scrollViewRef} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Choose your parcel type</Text>
 
@@ -1788,7 +1805,10 @@ const ParcelVehicleSelectionScreen = ({ route, navigation }) => {
 
           {selectedSubService && (
             <>
-              <View style={styles.section}>
+              <View style={styles.section}
+               onLayout={(event) => {
+        detailsSectionY.current = event.nativeEvent.layout.y;
+      }}>
                 <Text style={styles.sectionTitle}>Details</Text>
 
                 <View style={styles.formCard}>

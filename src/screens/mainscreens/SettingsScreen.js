@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Switch,
   Alert,
+  Linking,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useDispatch } from 'react-redux';
@@ -130,6 +131,21 @@ const SettingsScreen = ({ navigation }) => {  // Add navigation prop
             />
           ))
         )}
+      </View>
+
+      {/* SIGI Ride Captain App */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>SIGI Ride Captain</Text>
+        <MenuItem
+          icon="shield-checkmark-outline"
+          title="Open SIGI Ride Captain"
+          onPress={() => {
+            const url = 'https://play.google.com/store/apps/details?id=com.sigiridecaptain';
+            Linking.openURL(url).catch(() => {
+              Alert.alert('Error', 'Unable to open Play Store.');
+            });
+          }}
+        />
       </View>
 
       {/* Chat Support - Updated to navigate to chat screen */}

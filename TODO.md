@@ -1,10 +1,5 @@
-# TODO
-
-- [x] Add Redux action `CANCEL_PARCEL_BOOKING` to call `POST /parcel/booking/cancel`.
-
-- [x] Add Cancel button in `ParcelMyParcelsHistoryScreen`.
-
-- [ ] Button visibility: show only when parcel status is delivered AND not cancelled (use existing status parsing rules).
-- [ ] On cancel success: refresh parcel list.
-- [ ] Implement cancel reason input (use Alert prompt or simple UI).
+- [ ] Update SettingsScreen: add menu item for Google Play link to SIGI ride captain app
+- [ ] Ensure tapping opens external URL (Linking)
+- [ ] Add styling + icon consistent with existing MenuItem
+- [ ] Run eslint / tests (or at least yarn lint) to confirm no syntax errors
 

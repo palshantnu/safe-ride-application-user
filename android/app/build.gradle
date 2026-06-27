@@ -82,8 +82,8 @@ android {
         applicationId "com.sigirideuserstaxi"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 7002
-        versionName "1.7"
+        versionCode 8002
+        versionName "1.8"
     }
     signingConfigs {
         debug {
