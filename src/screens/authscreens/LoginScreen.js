@@ -223,7 +223,7 @@ const LoginScreen = ({ navigation }) => {
                                     <Text style={styles.codeHint}>
                                         We've sent a 4-digit code to
                                     </Text>
-                                    <Text style={styles.codeHint}>
+                                    <Text style={{...styles.codeHint,fontSize:20}}>
                                       OTP is {otp2}
                                     </Text>
                                     <Text style={styles.phoneDisplay}>+91 {phoneNumber}</Text>

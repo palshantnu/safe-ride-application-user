@@ -270,6 +270,15 @@ const HomeScreen = ({ navigation }) => {
     return `${IMAGE_URL}${profile.replace(/^\/+/, '')}`;
   };
 
+  const getDriverProfileImageUri = (profileUrl) => {
+    if (!profileUrl) return '';
+    const normalizedProfile = profileUrl.toString();
+    if (/^(https?:|file:|content:|data:)/.test(normalizedProfile)) {
+      return normalizedProfile.replace('http://', 'https://');
+    }
+    return `${IMAGE_URL}${normalizedProfile.replace(/^\/+/, '')}`;
+  };
+
   const profileImageUri = profileImageError ? '' : getProfileImageUri();
   const displayName = user?.name || profileData?.name || 'Guest User';
 
@@ -772,9 +781,17 @@ const secureProfileImage = profileImageUri.replace('http://', 'https://');
     const rideDropLocation = booking?.drop_address || booking?.drop_city;
     const status = getDisplayStatus(booking);
     const statusKey = toStatusKey(status);
-    const showDriverInfo = ['TOKEN_PAID', 'ARRIVED', 'STARTED'].includes(statusKey);
+    const isInCityBooking = booking?.is_incity;
+    const showDriverInfo = isInCityBooking
+      ? booking?.driver_name
+      : ['TOKEN_PAID', 'ARRIVED', 'STARTED'].includes(statusKey);
+      
     const showOtp = statusKey === 'ARRIVED' || statusKey === 'BALANCE_PAID';
-
+    // const vehicleTitle = booking?.vehicle_type;
+    const vehicleTitle = joinLocationParts(booking?.vehicle_type, booking?.vehicle_model);
+    const vehicleMeta = joinLocationParts(booking?.vehicle_color, booking?.vehicle_number);
+    const driverProfileImageUri = getDriverProfileImageUri(booking?.driver_profile_url);
+console.log('vehicleTitle',vehicleTitle)
     const totalTopupAmount = booking?.topups?.reduce((sum, t) => sum + parseFloat(t.topup_amount), 0) || 0;
     const totalFare = parseFloat(booking?.total_fare) + totalTopupAmount;
 
@@ -908,15 +925,65 @@ const secureProfileImage = profileImageUri.replace('http://', 'https://');
         )}
 
         {showDriverInfo && booking?.driver_name && (
-          <View style={styles.driverInfo}>
-            <View style={styles.driverDetail}>
-              <FontAwesome5 name="user-circle" size={16} color="#FF1493" />
-              <Text style={styles.driverText}>{booking?.driver_name}</Text>
-            </View>
-            <TouchableOpacity onPress={() => Linking.openURL(`tel:${booking?.driver_mobile}`)} style={styles.driverDetail}>
-              <FontAwesome5 name="phone" size={14} color="#FF1493" />
-              <Text style={styles.driverText}>{booking?.driver_mobile}</Text>
-            </TouchableOpacity>
+          <View style={[styles.driverInfo, !isInCityBooking && styles.driverInfoRow]}>
+            {console.log('isInCityBooking',isInCityBooking)}
+            {isInCityBooking ? (
+              <>
+                <View style={styles.driverInfoHeader}>
+                  <View style={styles.driverDetail}>
+                    {driverProfileImageUri ? (
+                      <Image
+                        source={{ uri: driverProfileImageUri }}
+                        style={styles.driverProfileImage}
+                      />
+                    ) : (
+                      <FontAwesome5 name="user-circle" size={16} color="#FF1493" />
+                    )}
+                    <Text style={styles.driverText}>{booking?.driver_name}</Text>
+                  </View>
+                  {booking?.driver_mobile ? (
+                    <TouchableOpacity
+                      onPress={() => Linking.openURL(`tel:${booking.driver_mobile}`)}
+                      style={styles.driverDetail}
+                    >
+                      <FontAwesome5 name="phone" size={14} color="#FF1493" />
+                      <Text style={styles.driverText}>{booking.driver_mobile}</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+
+                {(vehicleTitle || vehicleMeta) ? (
+                  <View style={styles.vehicleInfo}>
+                    {vehicleTitle ? (
+                      <View style={styles.vehicleInfoRow}>
+                        <FontAwesome5 name="car-side" size={14} color="#666" />
+                        <Text style={styles.vehicleInfoText}>{vehicleTitle}</Text>
+                      </View>
+                    ) : null}
+                    {vehicleMeta ? (
+                      <View style={styles.vehicleInfoRow}>
+                        <Icon name="info" size={14} color="#666" />
+                        <Text style={styles.vehicleInfoText}>{vehicleMeta}</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <View style={styles.driverDetail}>
+                  <FontAwesome5 name="user-circle" size={16} color="#FF1493" />
+                  <Text style={styles.driverText}>{booking?.driver_name}</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => Linking.openURL(`tel:${booking?.driver_mobile}`)}
+                  style={styles.driverDetail}
+                >
+                  <FontAwesome5 name="phone" size={14} color="#FF1493" />
+                  <Text style={styles.driverText}>{booking?.driver_mobile}</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         )}
 
@@ -2128,21 +2195,55 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   driverInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     backgroundColor: '#FFF0F5',
     padding: 12,
     borderRadius: 10,
     marginBottom: 15,
   },
+  driverInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  driverInfoHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 10,
+  },
   driverDetail: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexShrink: 1,
+  },
+  driverProfileImage: {
+    width: 70,
+    height: 70,
+    borderRadius: 14,
+    backgroundColor: '#F8C8DC',
   },
   driverText: {
     fontSize: 14,
     color: '#FF1493',
+    fontWeight: '500',
+  },
+  vehicleInfo: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#F8C8DC',
+    gap: 8,
+  },
+  vehicleInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  vehicleInfoText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#555',
     fontWeight: '500',
   },
   actionButton: {
