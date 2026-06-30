@@ -1491,25 +1491,36 @@ console.log('vehicleTitle',vehicleTitle)
               </View>
               <Text style={styles.userName}>{displayName}</Text>
             </View>
-            <TouchableOpacity
-              style={styles.profileButton}
-              onPress={() => navigation.navigate('Profile')}
-            >
-              <LinearGradient
-                colors={['#fff', '#fff5f5']}
-                style={styles.profileGradient}
+            <View style={styles.headerRightActions}>
+                  <TouchableOpacity
+                style={styles.profileButton}
+                onPress={() => navigation.navigate('Profile')}
               >
-                {profileImageUri ? (
-                  <Image
-                    source={{ uri: secureProfileImage }}
-                    style={styles.headerProfileImage}
-                    onError={() => setProfileImageError(true)}
-                  />
-                ) : (
-                  <Icon name="user" size={28} color="#FF1493" />
-                )}
-              </LinearGradient>
-            </TouchableOpacity>
+                <LinearGradient
+                  colors={['#fff', '#fff5f5']}
+                  style={styles.profileGradient}
+                >
+                  {profileImageUri ? (
+                    <Image
+                      source={{ uri: secureProfileImage }}
+                      style={styles.headerProfileImage}
+                      onError={() => setProfileImageError(true)}
+                    />
+                  ) : (
+                    <Icon name="user" size={28} color="#FF1493" />
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.notificationButton}
+                onPress={() => navigation.navigate('Notification')}
+                activeOpacity={0.8}
+              >
+                <Icon name="bell" size={24} color="#fff" />
+                <View style={styles.badge} />
+              </TouchableOpacity>
+          
+            </View>
           </View>
         </View>
       </LinearGradient>
@@ -2042,7 +2053,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: 10,
-    paddingBottom: 30,
+    paddingBottom: 0,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 40,
     borderBottomRightRadius: 40,
@@ -2085,6 +2096,31 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginTop: 4,
     letterSpacing: 0.5,
+  },
+  headerRightActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 15,
+  },
+  notificationButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: 10,
+    right: 12,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FF2D55',
+    borderWidth: 1,
+    borderColor: '#ff7f50',
   },
   profileButton: {
     width: 55,
@@ -2134,10 +2170,15 @@ const styles = StyleSheet.create({
     paddingRight: 12,
   },
   currentServiceName: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1A2B4E',
+       color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
     marginBottom: 8,
+    backgroundColor: '#ff4d6d',
+alignSelf: 'flex-start',
+  paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
   statusBadge: {
     alignSelf: 'flex-start',

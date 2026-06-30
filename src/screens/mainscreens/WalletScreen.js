@@ -321,7 +321,7 @@
               <Text style={styles.addButtonText}>Withdraw</Text>
             </TouchableOpacity>
           </View>
-           <Text style={{...styles.balanceLabel,marginTop:15}}>​Keep at least ₹0 in your wallet to booking</Text>
+           <Text style={{...styles.balanceLabel,marginTop:15,fontSize:12}}>​Keep at least ₹0 in your wallet to booking</Text>
         </LinearGradient>
 
         {loading && (

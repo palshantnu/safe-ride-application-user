@@ -52,7 +52,7 @@ const CurvedHeader = ({
 const styles = StyleSheet.create({
   header: {
     paddingTop: 10,
-    paddingBottom: 30,
+    paddingBottom: 0,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 40,
     borderBottomRightRadius: 40,

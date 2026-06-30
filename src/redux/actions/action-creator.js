@@ -2,6 +2,7 @@ import * as types from './action-types';
 
 import EndPoints from '../../services/EndPoints';
 import axiosinstance from '../../axios/axiosinstance';
+import messaging from '@react-native-firebase/messaging';
 
 export const SEND_OTP = (mobile) => async (dispatch) => {
   dispatch({ type: types.SEND_OTP_REQUEST });
@@ -34,10 +35,18 @@ console.log('response',response);
 export const VERIFY_OTP = (mobile, otp) => async (dispatch) => {
   dispatch({ type: types.VERIFY_OTP_REQUEST });
 
+  let fcm_token = null;
+  try {
+    fcm_token = await messaging().getToken();
+  } catch (error) {
+    console.log('Error getting FCM token:', error);
+  }
+console.log('fcm_token',fcm_token)
   try {
     const response = await axiosinstance.post(EndPoints.verifyOtp, {
       mobile,
       otp,
+      fcm_token,
     });
 
     if (response.data.token) {

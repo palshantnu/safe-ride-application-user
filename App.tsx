@@ -5,7 +5,7 @@ import { store, persistor } from './src/redux/store';
 import AppNavigator from './src/navigation/AppNavigator';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { PermissionsAndroid, StatusBar } from 'react-native';
-import RNAndroidLocationEnabler from 'react-native-android-location-enabler';
+import { promptForEnableLocationIfNeeded } from 'react-native-android-location-enabler';
 
 
 const App = () => {
@@ -31,7 +31,7 @@ useEffect(() => {
 
   const checkLocation = async () => {
     try {
-      await RNAndroidLocationEnabler.promptForEnableLocationIfNeeded({
+      await promptForEnableLocationIfNeeded({
         interval: 10000,
         fastInterval: 5000,
       });

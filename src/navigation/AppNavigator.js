@@ -28,6 +28,7 @@ import MyBookingsScreen from '../screens/mainscreens/MyBookingsScreen';
 import ParcelMyParcelsHistoryScreen from '../screens/mainscreens/ParcelMyParcelsHistoryScreen';
 import ParcelVehicleSelectionScreen from '../screens/mainscreens/ParcelVehicleSelectionScreen';
 import OnSpotBookings from '../screens/mainscreens/OnSpotBookings';
+import NotificationScreen from '../screens/mainscreens/NotificationScreen';
 
 
 const Stack = createStackNavigator();
@@ -242,6 +243,11 @@ const AppNavigator = () => {
 <Stack.Screen 
   name="OnSpotBookings" 
   component={OnSpotBookings} 
+  options={{ headerShown: false }}
+/>
+<Stack.Screen 
+  name="Notification" 
+  component={NotificationScreen} 
   options={{ headerShown: false }}
 />
           </>
