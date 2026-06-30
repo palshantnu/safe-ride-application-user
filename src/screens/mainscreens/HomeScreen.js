@@ -33,9 +33,11 @@ import {
   GET_USER_PROFILE,
   GET_CURRENT_PARCEL_BOOKINGS,
   GET_SELF_SHARING_BOOKINGS,
-  GET_ONSPOT_BOOKINGS
+  GET_ONSPOT_BOOKINGS,
+  GET_USER_POPUPS
 } from '../../redux/actions/action-creator';
 import { IMAGE_URL } from '../../axios/axiosinstance';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
@@ -71,6 +73,8 @@ const asArray = (data) => {
   return data ? [data] : [];
 };
 
+
+
 const HomeScreen = ({ navigation }) => {
   const [activeBookings, setActiveBookings] = useState([]);
   const [selectedBooking, setSelectedBooking] = useState(null);
@@ -94,6 +98,10 @@ const HomeScreen = ({ navigation }) => {
   const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
 
+
+  const [popupVisible, setPopupVisible] = useState(false);
+const [popupData, setPopupData] = useState(null);
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(100)).current;
   const bannerRef = useRef(null);
@@ -110,6 +118,8 @@ const HomeScreen = ({ navigation }) => {
     fetchServices();
     fetchRecentBookings();
     fetchProfile();
+
+     fetchPopup();
 
     const interval = setInterval(() => {
       fetchCurrentRide();
@@ -134,6 +144,42 @@ const HomeScreen = ({ navigation }) => {
       setGreetingIcon('moon');
     }
   };
+
+
+  const fetchPopup = async () => {
+  try {
+    const res = await dispatch(GET_USER_POPUPS());
+
+    if (!res?.status) return;
+
+    if (!res?.data?.length) return;
+
+    const popup = res.data[0];
+
+    const lastClosedPopup = await AsyncStorage.getItem("LAST_POPUP_ID");
+
+    // Already closed
+    if (lastClosedPopup == popup.id.toString()) {
+      return;
+    }
+
+    setPopupData(popup);
+    setPopupVisible(true);
+
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+const closePopup = async () => {
+
+  await AsyncStorage.setItem(
+    "LAST_POPUP_ID",
+    popupData.id.toString(),
+  );
+
+  setPopupVisible(false);
+};
 
   const getSettledValue = (result) => {
     if (result?.status === 'fulfilled') return result.value;
@@ -1943,6 +1989,48 @@ console.log('vehicleTitle',vehicleTitle)
           </View>
         </View>
       </Modal>
+
+      <Modal
+    visible={popupVisible}
+    transparent
+    animationType="fade">
+
+    <View style={styles.popupOverlay}>
+
+        <View style={styles.popupContainer}>
+
+            {!!popupData?.image_url && (
+                <Image
+                    source={{ uri: popupData.image_url }}
+                    style={styles.popupImage}
+                    resizeMode="cover"
+                />
+            )}
+
+            <Text style={styles.popupTitle}>
+                {popupData?.title}
+            </Text>
+
+            <Text style={styles.popupMessage}>
+                {popupData?.message}
+            </Text>
+
+            <TouchableOpacity
+                style={styles.popupButton}
+                onPress={closePopup}>
+
+                <Text style={styles.popupButtonText}>
+                    Got It
+                </Text>
+
+            </TouchableOpacity>
+
+        </View>
+
+    </View>
+
+</Modal>
+
     </View>
   );
 };
@@ -2794,6 +2882,56 @@ const styles = StyleSheet.create({
   },
     requestBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FF1493', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   requestBadgeText: { color: '#fff', fontSize: 12, fontWeight: '600', marginLeft: 6 },
+  popupOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+},
+
+popupContainer: {
+    width: '88%',
+    backgroundColor: '#fff',
+    borderRadius: 22,
+    overflow: 'hidden',
+    elevation: 10,
+},
+
+popupImage: {
+    width: '100%',
+    height: 220,
+},
+
+popupTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#222',
+    marginTop: 18,
+    textAlign: 'center',
+},
+
+popupMessage: {
+    fontSize: 15,
+    color: '#666',
+    textAlign: 'center',
+    marginHorizontal: 20,
+    marginTop: 10,
+    lineHeight: 22,
+},
+
+popupButton: {
+    margin: 20,
+    backgroundColor: '#ff4d6d',
+    borderRadius: 30,
+    paddingVertical: 14,
+},
+
+popupButtonText: {
+    color: '#fff',
+    textAlign: 'center',
+    fontWeight: '700',
+    fontSize: 16,
+},
 });
 
 export default HomeScreen;

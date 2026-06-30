@@ -661,6 +661,19 @@ console.log('PAY_FULL_BALANCE Params:', { bookingId, paymentMode, serviceType })
    
   }
 };
+
+export const GET_USER_POPUPS = () => async () => {
+  try {
+    const response = await axiosinstance.get('/popups/user');
+
+    return response.data;
+  } catch (error) {
+    console.log('GET_USER_POPUPS Error', error);
+    return null;
+  }
+};
+
+
 export const CREATE_ONSPOT_BOOKING =
   bookingData => async dispatch => {
 
