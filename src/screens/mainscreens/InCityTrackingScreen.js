@@ -242,7 +242,33 @@ const InCityTrackingScreen = ({ route, navigation }) => {
             </View>
           ))}
         </View>
-
+          {/* OTP — show when ARRIVED */}
+  {booking.status === 'ARRIVED' && booking.otp ? (
+          <View style={styles.otpHorizontalCard}>
+            <Text style={styles.otpHorizontalLabel}>Share OTP to captain</Text>
+            <Text style={styles.otpHorizontalValue}>{booking.otp}</Text>
+          </View>
+        ) : null}
+          {/* Driver info */}
+        {booking.driver_name ? (
+          <View style={styles.card}>
+            <View style={styles.driverRow}>
+              <View style={styles.driverAvatar}>
+                <FontAwesome5 name="user-circle" size={36} color="#FF1493" />
+              </View>
+              <View style={styles.driverMeta}>
+                <Text style={styles.driverName}>{booking.driver_name}</Text>
+                <TouchableOpacity style={styles.callRow} onPress={handleCall}>
+                  <Icon name="phone" size={14} color="#4CAF50" />
+                  <Text style={styles.driverPhone}>{booking.driver_mobile}</Text>
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity style={styles.callBtn} onPress={handleCall}>
+                <Icon name="phone-call" size={20} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : null}
         {/* Route */}
         <View style={styles.card}>
           <View style={styles.routeRow}>
@@ -265,35 +291,10 @@ const InCityTrackingScreen = ({ route, navigation }) => {
           </View>
         </View>
 
-        {/* Driver info */}
-        {booking.driver_name ? (
-          <View style={styles.card}>
-            <View style={styles.driverRow}>
-              <View style={styles.driverAvatar}>
-                <FontAwesome5 name="user-circle" size={36} color="#FF1493" />
-              </View>
-              <View style={styles.driverMeta}>
-                <Text style={styles.driverName}>{booking.driver_name}</Text>
-                <TouchableOpacity style={styles.callRow} onPress={handleCall}>
-                  <Icon name="phone" size={14} color="#4CAF50" />
-                  <Text style={styles.driverPhone}>{booking.driver_mobile}</Text>
-                </TouchableOpacity>
-              </View>
-              <TouchableOpacity style={styles.callBtn} onPress={handleCall}>
-                <Icon name="phone-call" size={20} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : null}
+      
 
-        {/* OTP — show when ARRIVED */}
-        {booking.status === 'ARRIVED' && booking.otp ? (
-          <View style={styles.otpCard}>
-            <Text style={styles.otpLabel}>Ride OTP</Text>
-            <Text style={styles.otpValue}>{booking.otp}</Text>
-            <Text style={styles.otpHint}>Driver ko ye OTP bataye ride start karne ke liye</Text>
-          </View>
-        ) : null}
+      
+      
 
         {/* Fare note */}
         <View style={styles.fareNoteCard}>
@@ -402,6 +403,28 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50', alignItems: 'center', justifyContent: 'center',
   },
 
+  otpHorizontalCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#FFF0F5',
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FFE0EB',
+  },
+  otpHorizontalLabel: {
+    fontSize: 14,
+    color: '#FF1493',
+    fontWeight: '600',
+  },
+  otpHorizontalValue: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#FF1493',
+    letterSpacing: 2,
+  },
   otpCard: {
     backgroundColor: '#FFF8E1', borderRadius: 12,
     padding: 16, alignItems: 'center',

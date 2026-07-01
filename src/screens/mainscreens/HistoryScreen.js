@@ -49,7 +49,7 @@ const UserHistoryScreen = ({ navigation }) => {
 
   const formatRideData = (booking) => {
     const isInCity = booking.is_incity === true || booking.is_incity === 1;
-
+console.log('booking--->', booking);
     if (isInCity) {
       const fare = parseFloat(booking.final_fare || booking.actual_fare || booking.total_fare || 0);
       return {
@@ -60,7 +60,7 @@ const UserHistoryScreen = ({ navigation }) => {
         price: fare,
         date: booking.created_at,
         status: booking.status?.toLowerCase() || 'completed',
-        driverName: booking.driver_name || 'Not assigned',
+        driverName: booking.driver_name || '',
         driverMobile: booking.driver_mobile || 'N/A',
         distance: parseFloat(booking.actual_distance || booking.distance || 0),
         duration: null,
@@ -71,6 +71,11 @@ const UserHistoryScreen = ({ navigation }) => {
         meter_images: [],
         created_at: booking.created_at,
         isInCity: true,
+        platform_fee:booking.platform_fee,
+        vehicle_color: booking.vehicle_color,
+        vehicle_model: booking.vehicle_model,
+        vehicle_number: booking.vehicle_number,
+        vehicle_type: booking.vehicle_type,
       };
     }
 
@@ -199,6 +204,7 @@ const UserHistoryScreen = ({ navigation }) => {
   };
 
   const handleRidePress = (ride) => {
+    console.log('Navigating to RideDetails with ride:', ride);
     navigation.navigate('RideDetails', { ride });
   };
 
@@ -306,7 +312,7 @@ const UserHistoryScreen = ({ navigation }) => {
       <View style={styles.rideFooter}>
         <View style={styles.rideInfo}>
           <Icon name="person-outline" size={16} color="#666" />
-          <Text style={styles.infoText}>{item.driverName}</Text>
+          <Text style={styles.infoText}>{item?.driverName}</Text>
           {/* {item.driverMobile !== 'N/A' && (
             <>
               <Icon name="call-outline" size={14} color="#999" style={styles.phoneIcon} />

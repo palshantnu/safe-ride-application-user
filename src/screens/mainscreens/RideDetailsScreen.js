@@ -38,7 +38,7 @@ const RideDetailsScreen = ({ route, navigation }) => {
   };
 
   const formatPrice = (price) => {
-    return `₹${parseFloat(price).toFixed(2)}`;
+    return `₹${parseFloat(price || 0).toFixed(2)}`;
   };
 
   const getStatusColor = (status) => {
@@ -76,8 +76,11 @@ const RideDetailsScreen = ({ route, navigation }) => {
 
   const handleShare = async () => {
     try {
+      const vehicleInfoStr = ride.isInCity
+        ? `${ride.vehicle_model || ''} (${ride.vehicle_number || ''})`
+        : (ride.vehicle?.name || '');
       await Share.share({
-        message: `Ride Details:\nBooking ID: ${ride.booking_id}\nFrom: ${ride.pickup}\nTo: ${ride.destination}\nDate: ${formatDate(ride.date)}\nTime: ${formatTime(ride.date)}\nVehicle: ${ride.vehicle.name}\nBase Fare: ${formatPrice(ride.basePrice)}\nTopup Amount: ${formatPrice(ride.topupAmount)}\nTotal: ${formatPrice(ride.price)}\nDriver: ${ride.driverName}\nMobile: ${ride.driverMobile}`,
+        message: `Ride Details:\nBooking ID: ${ride.booking_id}\nFrom: ${ride.pickup}\nTo: ${ride.destination}\nDate: ${formatDate(ride.date)}\nTime: ${formatTime(ride.date)}\nVehicle: ${vehicleInfoStr}\nBase Fare: ${formatPrice(ride.isInCity ? ride.price : ride.basePrice)}\nTopup Amount: ${formatPrice(ride.topupAmount)}\nTotal: ${formatPrice(ride.price)}\nDriver: ${ride.driverName}\nMobile: ${ride.driverMobile}`,
         title: 'Ride Details',
       });
     } catch (error) {
@@ -246,10 +249,12 @@ const RideDetailsScreen = ({ route, navigation }) => {
           <Icon name="time-outline" size={18} color="#666" />
           <Text style={styles.infoText}>{formatTime(ride.date)}</Text>
         </View>
-        <View style={styles.infoRow}>
-          <FontAwesome5 name="clock" size={16} color="#666" />
-          <Text style={styles.infoText}>Duration: {ride.duration} hour{ride.duration > 1 ? 's' : ''}</Text>
-        </View>
+        {!ride.isInCity && ride.duration != null && (
+          <View style={styles.infoRow}>
+            <FontAwesome5 name="clock" size={16} color="#666" />
+            <Text style={styles.infoText}>Duration: {ride.duration} hour{ride.duration > 1 ? 's' : ''}</Text>
+          </View>
+        )}
       </View>
 
       {/* Route Information */}
@@ -325,16 +330,26 @@ const RideDetailsScreen = ({ route, navigation }) => {
           <View style={styles.vehicleIconContainer}>
             <FontAwesome5 name="car-side" size={40} color="#FF1493" />
           </View>
-          <View style={styles.vehicleDetails}>
-            <Text style={styles.vehicleName}>{ride.vehicle.name}</Text>
-            <Text style={styles.vehicleType}>{ride.vehicle.type}</Text>
-            <Text style={styles.vehicleSpecs}>Plan: {ride.duration} hour • {ride.distance} km</Text>
-          </View>
+          {ride.isInCity ? (
+            <View style={styles.vehicleDetails}>
+              <Text style={styles.vehicleName}>{ride.vehicle_model || 'N/A'}</Text>
+              <Text style={styles.vehicleType}>{ride.vehicle_type ? `Type: ${ride.vehicle_type}` : 'N/A'}</Text>
+              <Text style={styles.vehicleSpecs}>
+                {`Number: ${ride.vehicle_number || 'N/A'}${ride.vehicle_color ? ` • Color: ${ride.vehicle_color}` : ''}`}
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.vehicleDetails}>
+              <Text style={styles.vehicleName}>{ride?.vehicle?.name}</Text>
+              <Text style={styles.vehicleType}>{ride?.vehicle?.type}</Text>
+              <Text style={styles.vehicleSpecs}>Plan: {ride?.duration} hour • {ride?.distance} km</Text>
+            </View>
+          )}
         </View>
       </View>
 
       {/* Driver Information */}
-      <View style={styles.card}>
+      {ride.driverName && <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Icon name="person" size={20} color="#FF1493" />
           <Text style={styles.cardTitle}>Driver Details</Text>
@@ -344,7 +359,7 @@ const RideDetailsScreen = ({ route, navigation }) => {
             <FontAwesome5 name="user-circle" size={50} color="#FF1493" />
           </View>
           <View style={styles.driverDetails}>
-            <Text style={styles.driverName}>{ride.driverName}</Text>
+            <Text style={styles.driverName}>{ride?.driverName}</Text>
             {/* <TouchableOpacity 
               style={styles.callButton}
               onPress={handleCallDriver}
@@ -361,7 +376,7 @@ const RideDetailsScreen = ({ route, navigation }) => {
             )}
           </View>
         </View>
-      </View>
+      </View>}
 
       {/* Payment Information */}
       <View style={styles.card}>
@@ -370,8 +385,8 @@ const RideDetailsScreen = ({ route, navigation }) => {
           <Text style={styles.cardTitle}>Payment Details</Text>
         </View>
         <View style={styles.paymentRow}>
-          <Text style={styles.paymentLabel}>Base Fare</Text>
-          <Text style={styles.paymentValue}>{formatPrice(ride.basePrice)}</Text>
+          <Text style={styles.paymentLabel}>{ride.isInCity ? 'Ride Fare' : 'Base Fare'}</Text>
+          <Text style={styles.paymentValue}>{formatPrice(ride.isInCity ? ride.price : ride.basePrice)}</Text>
         </View>
         {ride.topupAmount > 0 && (
           <View style={styles.paymentRow}>
@@ -396,35 +411,7 @@ const RideDetailsScreen = ({ route, navigation }) => {
       {renderMeterImages()}
 
       {/* Action Buttons */}
-      <View style={styles.actionButtons}>
-        {ride.status === 'completed' && (
-          <TouchableOpacity
-            style={[styles.actionButton, styles.rateButton]}
-            onPress={handleRateRide}
-          >
-            <Icon name="star" size={20} color="#FF9800" />
-            <Text style={styles.rateButtonText}>
-              {ride.rating > 0 ? 'View Rating' : 'Rate Ride'}
-            </Text>
-          </TouchableOpacity>
-        )}
-        
-        <TouchableOpacity
-          style={[styles.actionButton, styles.receiptButton]}
-          onPress={handleViewReceipt}
-        >
-          <Icon name="document-text" size={20} color="#FF1493" />
-          <Text style={styles.receiptButtonText}>View Receipt</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.actionButton, styles.supportButton]}
-          onPress={handleCallSupport}
-        >
-          <Icon name="call" size={20} color="#4CAF50" />
-          <Text style={styles.supportButtonText}>Support</Text>
-        </TouchableOpacity>
-      </View>
+  
 
       {/* Help Text */}
       <View style={styles.helpContainer}>

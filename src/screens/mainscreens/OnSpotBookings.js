@@ -439,11 +439,9 @@ const OnSpotBookings = ({ navigation }) => {
 
           {/* OTP Display (if token paid and not completed) */}
           {OTP && status !== 'COMPLETED' && status !== 'CANCELLED' && status !== 'PENDING' && balance_paid === 1 && (
-            <View style={styles.otpContainer}>
-              <Icon name="key-outline" size={18} color="#FF9800" />
-              <Text style={styles.otpLabel}>Your OTP for this booking:</Text>
-              <Text style={styles.otpValue}>{OTP}</Text>
-              <Text style={styles.otpHint}>Share this OTP with driver to start the service</Text>
+            <View style={styles.otpHorizontalCard}>
+              <Text style={styles.otpHorizontalLabel}>Share OTP to captain</Text>
+              <Text style={styles.otpHorizontalValue}>{OTP}</Text>
             </View>
           )}
 
@@ -793,6 +791,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8F9FA',
+  },
+  otpHorizontalCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#FFF0F5',
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FFE0EB',
+    marginBottom: 15,
+  },
+  otpHorizontalLabel: {
+    fontSize: 14,
+    color: '#FF1493',
+    fontWeight: '600',
+  },
+  otpHorizontalValue: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#FF1493',
+    letterSpacing: 2,
   },
   header: {
     flexDirection: 'row',

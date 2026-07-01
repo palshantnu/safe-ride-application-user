@@ -12,6 +12,7 @@ import {
   RefreshControl,
   Modal,
   Dimensions,
+  Linking,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Feather';
@@ -287,23 +288,29 @@ const MyBookingsScreen = ({ navigation, route }) => {
         </View>
 
         {/* Driver Info */}
-        {item.driver_name && (
-          <View style={styles.driverInfoSection}>
-            <View style={styles.driverItem}>
-              <FontAwesome5 name="user-circle" size={14} color="#FF1493" />
-              <View style={{ marginLeft: 8, flex: 1 }}>
-                <Text style={styles.driverLabel}>Driver</Text>
-                <Text style={styles.driverName}>{item.driver_name}</Text>
+        {item.driver_name ? (
+          <View style={styles.driverCard}>
+            <View style={styles.driverRow}>
+              <View style={styles.driverAvatar}>
+                <FontAwesome5 name="user-circle" size={36} color="#FF1493" />
               </View>
+              <View style={styles.driverMeta}>
+                <Text style={styles.driverName}>{item.driver_name}</Text>
+                {item.driver_mobile ? (
+                  <TouchableOpacity style={styles.callRow} onPress={() => Linking.openURL(`tel:${item.driver_mobile}`)}>
+                    <Icon name="phone" size={14} color="#4CAF50" />
+                    <Text style={styles.driverPhone}>{item.driver_mobile}</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+              {item.driver_mobile ? (
+                <TouchableOpacity style={styles.callBtn} onPress={() => Linking.openURL(`tel:${item.driver_mobile}`)}>
+                  <Icon name="phone-call" size={20} color="#fff" />
+                </TouchableOpacity>
+              ) : null}
             </View>
-            {/* {item.driver_mobile && (
-              <TouchableOpacity style={styles.contactButton}>
-                <FontAwesome5 name="phone" size={12} color="#FF1493" />
-                <Text style={styles.contactButtonText}>Contact</Text>
-              </TouchableOpacity>
-            )} */}
           </View>
-        )}
+        ) : null}
 
         {/* Pickup Address */}
         {item.pickup_address && (
@@ -314,14 +321,12 @@ const MyBookingsScreen = ({ navigation, route }) => {
             </Text>
           </View>
         )}
-        {item.pickup_address && (
-          <View style={styles.pickupSection}>
-             <Text style={styles.location}>OTP :</Text>
-            <Text style={styles.pickupText} numberOfLines={2}>
-              {item.otp}
-            </Text>
+        {item.otp ? (
+          <View style={styles.otpHorizontalCard}>
+            <Text style={styles.otpHorizontalLabel}>Share OTP to captain</Text>
+            <Text style={styles.otpHorizontalValue}>{item.otp}</Text>
           </View>
-        )}
+        ) : null}
 
         {/* Pay Full Amount Button - Only for BOARDING status */}
         {status === 'BOARDING' && item.balance_amount && item.balance_paid !=1 && (
@@ -554,6 +559,50 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8F9FA',
+  },
+  otpHorizontalCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#FFF0F5',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#FFE0EB',
+  },
+  otpHorizontalLabel: {
+    fontSize: 13,
+    color: '#FF1493',
+    fontWeight: '600',
+  },
+  otpHorizontalValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FF1493',
+    letterSpacing: 1,
+  },
+  driverCard: {
+    backgroundColor: '#F9F9F9',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    marginTop: 10,
+  },
+  driverRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  driverAvatar: {
+    width: 48, height: 48, borderRadius: 24,
+    backgroundColor: '#FFF0F7', alignItems: 'center', justifyContent: 'center',
+  },
+  driverMeta: { flex: 1 },
+  driverName: { fontSize: 15, fontWeight: '700', color: '#222' },
+  callRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  driverPhone: { fontSize: 13, color: '#4CAF50', fontWeight: '500' },
+  callBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: '#4CAF50', alignItems: 'center', justifyContent: 'center',
   },
   header: {
     paddingTop: 10,

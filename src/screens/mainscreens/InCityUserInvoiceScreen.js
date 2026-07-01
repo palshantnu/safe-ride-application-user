@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import MaterialIcon from 'react-native-vector-icons/MaterialCommunityIcons';
+import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import { useDispatch } from 'react-redux';
 import { GET_INVOICE, PROCESS_PAYMENT, GET_USER_CURRENT_BOOKING } from '../../redux/actions/action-creator';
 import CurvedHeader from '../../components/CurvedHeader';
@@ -28,7 +29,7 @@ const WHITE  = '#FFFFFF';
 
 const Row = ({ icon, label, value }) => (
   <View style={s.row}>
-    <Icon name={icon} size={14} color={SUBTLE} style={{ marginTop: 1 }} />
+   {icon == 'dollar-sign' ? <MaterialIcon name="currency-inr" size={16} color={SUBTLE} />:<Icon name={icon} size={14} color={SUBTLE} style={{ marginTop: 1 }} />}
     <Text style={s.rowLabel}>{label}</Text>
     <Text style={s.rowValue}>{value ?? '—'}</Text>
   </View>
@@ -184,14 +185,7 @@ const InCityUserInvoiceScreen = ({ route, navigation }) => {
           <View style={s.divider} />
           <Row icon="hash"       label="Booking ID" value={`#${bookingId}`} />
           <Row icon="tag"        label="Service"    value={subService} />
-          {driverName  && <Row icon="user"         label="Driver"     value={driverName} />}
-          {driverPhone && (
-            <TouchableOpacity onPress={() => Linking.openURL(`tel:${driverPhone}`)} style={s.callRow}>
-              <Icon name="phone" size={14} color={GREEN} />
-              <Text style={[s.rowLabel, { color: GREEN }]}>Call Driver</Text>
-              <Text style={[s.rowValue, { color: GREEN }]}>{driverPhone}</Text>
-            </TouchableOpacity>
-          )}
+     
         </View>
 
         {/* Route */}
@@ -287,6 +281,27 @@ const InCityUserInvoiceScreen = ({ route, navigation }) => {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
+  driverCard: {
+    backgroundColor: '#F9F9F9',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    marginTop: 10,
+  },
+  driverRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  driverAvatar: {
+    width: 48, height: 48, borderRadius: 24,
+    backgroundColor: '#FFF0F7', alignItems: 'center', justifyContent: 'center',
+  },
+  driverMeta: { flex: 1 },
+  driverName: { fontSize: 15, fontWeight: '700', color: '#222' },
+  callRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  driverPhone: { fontSize: 13, color: '#4CAF50', fontWeight: '500' },
+  callBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: '#4CAF50', alignItems: 'center', justifyContent: 'center',
+  },
   scroll: { paddingHorizontal: 16, paddingTop: 20 },
 
   statusCard: {

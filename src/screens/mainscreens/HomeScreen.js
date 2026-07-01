@@ -769,10 +769,9 @@ const secureProfileImage = profileImageUri.replace('http://', 'https://');
                   <Text style={styles.topupDetail}>{lastTopup?.extra_km} km extra</Text>
                   <Text style={styles.topupReason}>Reason: {lastTopup?.reason}</Text>
                 </View>
-                <View style={styles.otpInfoContainer}>
-                  <Text style={styles.otpInfoLabel}>Topup OTP (Share with Driver)</Text>
-                  <Text style={styles.otpInfoValue}>{lastTopup?.topup_otp}</Text>
-                  <Text style={styles.otpInfoHint}>Driver will verify this OTP to confirm the topup</Text>
+                <View style={styles.otpHorizontalContainer}>
+                  <Text style={styles.otpHorizontalLabel}>Share OTP to captain</Text>
+                  <Text style={styles.otpHorizontalValue}>{lastTopup?.topup_otp}</Text>
                 </View>
               </View>
             )}
@@ -858,7 +857,7 @@ console.log('vehicleTitle',vehicleTitle)
 
         <View style={styles.cardHeader}>
           <View style={styles.cardHeaderLeft}>
-            <Text style={styles.currentServiceName}>{getServiceName(booking)}</Text>
+            <Text style={styles.currentServiceName}> <Icon name="bell" size={16} color="#fff" />{'  '}{getServiceName(booking)}</Text>
             <View style={[styles.statusBadge, { backgroundColor: getStatusColor(status) }]}>
               <Text style={styles.statusBadgeText}>{getStatusText(status)}</Text>
             </View>
@@ -869,10 +868,10 @@ console.log('vehicleTitle',vehicleTitle)
               <Text style={{...styles.fareAmount,marginBottom:10}}>₹{booking.total_fare}</Text>
              
             
-                      <View style={{...styles.requestBadge,backgroundColor:'#2196F3',}}>
+                      {/* <View style={{...styles.requestBadge,backgroundColor:'#2196F3',}}>
       <Icon name="bell" size={16} color="#fff" />
       <Text style={styles.requestBadgeText}>In City Ride</Text>
-      </View>
+      </View> */}
       </View>
               
           ) : (
@@ -971,75 +970,57 @@ console.log('vehicleTitle',vehicleTitle)
         )}
 
         {showDriverInfo && booking?.driver_name && (
-          <View style={[styles.driverInfo, !isInCityBooking && styles.driverInfoRow]}>
-            {console.log('isInCityBooking',isInCityBooking)}
-            {isInCityBooking ? (
-              <>
-                <View style={styles.driverInfoHeader}>
-                  <View style={styles.driverDetail}>
-                    {driverProfileImageUri ? (
-                      <Image
-                        source={{ uri: driverProfileImageUri }}
-                        style={styles.driverProfileImage}
-                      />
-                    ) : (
-                      <FontAwesome5 name="user-circle" size={16} color="#FF1493" />
-                    )}
-                    <Text style={styles.driverText}>{booking?.driver_name}</Text>
-                  </View>
-                  {booking?.driver_mobile ? (
-                    <TouchableOpacity
-                      onPress={() => Linking.openURL(`tel:${booking.driver_mobile}`)}
-                      style={styles.driverDetail}
-                    >
-                      <FontAwesome5 name="phone" size={14} color="#FF1493" />
-                      <Text style={styles.driverText}>{booking.driver_mobile}</Text>
-                    </TouchableOpacity>
-                  ) : null}
-                </View>
+          <View style={styles.driverCard}>
+            <View style={styles.driverRow}>
+              <View style={styles.driverAvatar}>
+                {driverProfileImageUri ? (
+                  <Image
+                    source={{ uri: driverProfileImageUri }}
+                    style={styles.driverProfileImage}
+                  />
+                ) : (
+                  <FontAwesome5 name="user-circle" size={36} color="#FF1493" />
+                )}
+              </View>
+              <View style={styles.driverMeta}>
+                <Text style={styles.driverName}>{booking.driver_name}</Text>
+                {booking?.driver_mobile ? (
+                  <TouchableOpacity style={styles.callRow} onPress={() => Linking.openURL(`tel:${booking.driver_mobile}`)}>
+                    <Icon name="phone" size={14} color="#4CAF50" />
+                    <Text style={styles.driverPhone}>{booking.driver_mobile}</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+              {booking?.driver_mobile ? (
+                <TouchableOpacity style={styles.callBtn} onPress={() => Linking.openURL(`tel:${booking.driver_mobile}`)}>
+                  <Icon name="phone-call" size={20} color="#fff" />
+                </TouchableOpacity>
+              ) : null}
+            </View>
 
-                {(vehicleTitle || vehicleMeta) ? (
-                  <View style={styles.vehicleInfo}>
-                    {vehicleTitle ? (
-                      <View style={styles.vehicleInfoRow}>
-                        <FontAwesome5 name="car-side" size={14} color="#666" />
-                        <Text style={styles.vehicleInfoText}>{vehicleTitle}</Text>
-                      </View>
-                    ) : null}
-                    {vehicleMeta ? (
-                      <View style={styles.vehicleInfoRow}>
-                        <Icon name="info" size={14} color="#666" />
-                        <Text style={styles.vehicleInfoText}>{vehicleMeta}</Text>
-                      </View>
-                    ) : null}
+            {(vehicleTitle || vehicleMeta) ? (
+              <View style={styles.vehicleInfo}>
+                {vehicleTitle ? (
+                  <View style={styles.vehicleInfoRow}>
+                    <FontAwesome5 name="car-side" size={14} color="#666" />
+                    <Text style={styles.vehicleInfoText}>{vehicleTitle}</Text>
                   </View>
                 ) : null}
-              </>
-            ) : (
-              <>
-                <View style={styles.driverDetail}>
-                  <FontAwesome5 name="user-circle" size={16} color="#FF1493" />
-                  <Text style={styles.driverText}>{booking?.driver_name}</Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => Linking.openURL(`tel:${booking?.driver_mobile}`)}
-                  style={styles.driverDetail}
-                >
-                  <FontAwesome5 name="phone" size={14} color="#FF1493" />
-                  <Text style={styles.driverText}>{booking?.driver_mobile}</Text>
-                </TouchableOpacity>
-              </>
-            )}
+                {vehicleMeta ? (
+                  <View style={styles.vehicleInfoRow}>
+                    <Icon name="info" size={14} color="#666" />
+                    <Text style={styles.vehicleInfoText}>{vehicleMeta}</Text>
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
           </View>
         )}
 
         {showOtp && booking?.otp && (
-          <View style={styles.otpContainer}>
-            <Text style={styles.otpLabel}>Ride OTP</Text>
-            <Text style={styles.otpValue}>{booking?.otp}</Text>
-            <Text style={styles.otpHint}>
-              Driver ko ye OTP bataye ride start karne ke liye
-            </Text>
+          <View style={styles.otpHorizontalContainer}>
+            <Text style={styles.otpHorizontalLabel}>Share OTP to captain</Text>
+            <Text style={styles.otpHorizontalValue}>{booking?.otp}</Text>
           </View>
         )}
 
@@ -1157,9 +1138,9 @@ console.log('vehicleTitle',vehicleTitle)
         </View>
 
         {otp ? (
-          <View style={styles.otpContainer}>
-            <Text style={styles.otpLabel}>{otpLabel}</Text>
-            <Text style={styles.otpValue}>{otp}</Text>
+          <View style={styles.otpHorizontalContainer}>
+            <Text style={styles.otpHorizontalLabel}>Share OTP to captain</Text>
+            <Text style={styles.otpHorizontalValue}>{otp}</Text>
           </View>
         ) : null}
 
@@ -1270,9 +1251,9 @@ console.log('vehicleTitle',vehicleTitle)
         </View>
 
         {booking?.otp ? (
-          <View style={styles.otpContainer}>
-            <Text style={styles.otpLabel}>Booking OTP</Text>
-            <Text style={styles.otpValue}>{booking.otp}</Text>
+          <View style={styles.otpHorizontalContainer}>
+            <Text style={styles.otpHorizontalLabel}>Share OTP to captain</Text>
+            <Text style={styles.otpHorizontalValue}>{booking.otp}</Text>
           </View>
         ) : null}
 
@@ -1397,9 +1378,9 @@ console.log('vehicleTitle',vehicleTitle)
         ) : null}
 
         {showOtp ? (
-          <View style={styles.otpContainer}>
-            <Text style={styles.otpLabel}>On Spot OTP</Text>
-            <Text style={styles.otpValue}>{booking.otp}</Text>
+          <View style={styles.otpHorizontalContainer}>
+            <Text style={styles.otpHorizontalLabel}>Share OTP to captain</Text>
+            <Text style={styles.otpHorizontalValue}>{booking.otp}</Text>
           </View>
         ) : null}
 
@@ -2896,6 +2877,50 @@ alignSelf: 'flex-start',
     fontWeight: '600',
     marginBottom: 8,
     textAlign: 'right',
+  },
+  otpHorizontalContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#FFF0F5',
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    borderRadius: 12,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#FFE0EB',
+  },
+  otpHorizontalLabel: {
+    fontSize: 14,
+    color: '#FF1493',
+    fontWeight: '600',
+  },
+  otpHorizontalValue: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#FF1493',
+    letterSpacing: 2,
+  },
+  driverCard: {
+    backgroundColor: '#F9F9F9',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    marginTop: 10,
+  },
+  driverRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  driverAvatar: {
+    width: 48, height: 48, borderRadius: 24,
+    backgroundColor: '#FFF0F7', alignItems: 'center', justifyContent: 'center',marginRight:10
+  },
+  driverMeta: { flex: 1 },
+  driverName: { fontSize: 15, fontWeight: '700', color: '#222' },
+  callRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  driverPhone: { fontSize: 13, color: '#4CAF50', fontWeight: '500' },
+  callBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: '#4CAF50', alignItems: 'center', justifyContent: 'center',
   },
   otpContainer: {
     backgroundColor: '#E8F5E9',
