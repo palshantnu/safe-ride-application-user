@@ -10,6 +10,8 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Modal,
+  TextInput,
 } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Feather';
@@ -64,6 +66,8 @@ const InCityTrackingScreen = ({ route, navigation }) => {
   console.log('initialBooking', initialBooking);
   const [routeCoords, setRouteCoords] = useState([]);
   const [cancelling, setCancelling] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
   const [driverLocation, setDriverLocation] = useState(
     initialBooking.driver_current_lat && initialBooking.driver_current_lng
       ? {
@@ -139,32 +143,35 @@ const InCityTrackingScreen = ({ route, navigation }) => {
   }, [dispatch, navigation]);
 
   const handleCancel = () => {
-    Alert.alert(
-      'Cancel Ride',
-      'Are you sure you want to cancel this ride?',
-      [
-        { text: 'No', style: 'cancel' },
-        {
-          text: 'Yes, Cancel',
-          style: 'destructive',
-          onPress: async () => {
-            setCancelling(true);
-            try {
-              const res = await dispatch(CANCEL_BOOKING({ booking_id: booking.booking_id,role:"USER" }));
-              if (res?.status) {
-                navigation.goBack();
-              } else {
-                Alert.alert('Error', res?.message || 'Failed to cancel ride');
-              }
-            } catch (_) {
-              Alert.alert('Error', 'Something went wrong');
-            } finally {
-              setCancelling(false);
-            }
-          },
-        },
-      ]
-    );
+    setCancelReason('');
+    setShowCancelModal(true);
+  };
+
+  const submitCancelRide = async () => {
+    if (!cancelReason.trim()) {
+      Alert.alert('Error', 'Please enter reason');
+      return;
+    }
+    setCancelling(true);
+    try {
+      const res = await dispatch(
+        CANCEL_BOOKING({
+          booking_id: booking.booking_id,
+          role: "USER",
+          cancel_reason: cancelReason.trim(),
+        })
+      );
+      if (res?.status) {
+        setShowCancelModal(false);
+        navigation.goBack();
+      } else {
+        Alert.alert('Error', res?.message || 'Failed to cancel ride');
+      }
+    } catch (_) {
+      Alert.alert('Error', 'Something went wrong');
+    } finally {
+      setCancelling(false);
+    }
   };
 
   const handleCall = () => {
@@ -328,6 +335,45 @@ const InCityTrackingScreen = ({ route, navigation }) => {
           </TouchableOpacity>
         )}
       </ScrollView>
+
+      <Modal visible={showCancelModal} transparent animationType="slide">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Cancel Ride</Text>
+            <Text style={styles.modalSubtitle}>Please enter the reason for cancellation</Text>
+
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Enter reason"
+              placeholderTextColor="#999"
+              value={cancelReason}
+              onChangeText={setCancelReason}
+              multiline
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalCancelBtn]}
+                onPress={() => setShowCancelModal(false)}
+              >
+                <Text style={styles.modalCancelBtnText}>Close</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalSubmitBtn]}
+                onPress={submitCancelRide}
+                disabled={cancelling}
+              >
+                {cancelling ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.modalSubmitBtnText}>Submit</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -469,6 +515,69 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.35,
     shadowRadius: 4,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    width: '90%',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 15,
+    backgroundColor: '#f9f9f9',
+    height: 100,
+    textAlignVertical: 'top',
+    color: '#333',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalCancelBtn: {
+    backgroundColor: '#f0f0f0',
+  },
+  modalSubmitBtn: {
+    backgroundColor: '#FF1493',
+  },
+  modalCancelBtnText: {
+    color: '#666',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  modalSubmitBtnText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
 

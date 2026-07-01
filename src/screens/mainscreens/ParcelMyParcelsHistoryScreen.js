@@ -9,6 +9,8 @@ import {
   RefreshControl,
   StatusBar,
   Alert,
+  Modal,
+  TextInput,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
@@ -46,6 +48,9 @@ const ParcelMyParcelsHistoryScreen = ({ navigation }) => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [processingPayment, setProcessingPayment] = useState(false);
   const [paymentType, setPaymentType] = useState(null); // 'token' or 'balance'
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [selectedParcelIdForCancel, setSelectedParcelIdForCancel] = useState(null);
 
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
@@ -353,56 +358,48 @@ const handlePayToken = async (parcel) => {
   }
 };
 
-  const handleCancelParcel = async (parcel) => {
-  const parcelBookingId =
-    parcel?.parcel_booking_id || parcel?.id;
+const handleCancelParcel = (parcel) => {
+  const parcelBookingId = parcel?.parcel_booking_id || parcel?.id;
+  setSelectedParcelIdForCancel(parcelBookingId);
+  setCancelReason('');
+  setShowCancelModal(true);
+};
 
-  Alert.alert(
-    'Cancel Parcel',
-    'Are you sure you want to cancel this parcel?',
-    [
-      {
-        text: 'No',
-        style: 'cancel',
-      },
-      {
-        text: 'Yes',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            setProcessingPayment(true);
+const submitCancelParcel = async () => {
+  if (!cancelReason.trim()) {
+    Alert.alert('Error', 'Please enter reason');
+    return;
+  }
+  try {
+    setProcessingPayment(true);
+    const res = await dispatch(
+      CANCEL_PARCEL_BOOKING({
+        parcel_booking_id: selectedParcelIdForCancel,
+        cancel_reason: cancelReason.trim(),
+      }),
+    );
 
-            const res = await dispatch(
-              CANCEL_PARCEL_BOOKING({
-                parcel_booking_id: parcelBookingId,
-                cancel_reason: 'Cancelled By User',
-              }),
-            );
-
-            if (res?.status) {
-              Alert.alert(
-                'Success',
-                'Parcel booking cancelled',
-              );
-              await fetchMyParcels();
-            } else {
-              Alert.alert(
-                'Error',
-                res?.message || 'Cancel failed',
-              );
-            }
-          } catch (e) {
-            Alert.alert(
-              'Error',
-              e?.message || 'Cancel failed',
-            );
-          } finally {
-            setProcessingPayment(false);
-          }
-        },
-      },
-    ],
-  );
+    if (res?.status) {
+      setShowCancelModal(false);
+      Alert.alert(
+        'Success',
+        'Parcel booking cancelled',
+      );
+      await fetchMyParcels();
+    } else {
+      Alert.alert(
+        'Error',
+        res?.message || 'Cancel failed',
+      );
+    }
+  } catch (e) {
+    Alert.alert(
+      'Error',
+      e?.message || 'Cancel failed',
+    );
+  } finally {
+    setProcessingPayment(false);
+  }
 };
 
   const renderParcelCard = ({ item }) => {
@@ -659,6 +656,45 @@ console.log('parcel_booking_id', item?.parcel_booking_id,'user_status', user_sta
           </View>
         ) : null}
       />
+
+      <Modal visible={showCancelModal} transparent animationType="slide">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Cancel Parcel</Text>
+            <Text style={styles.modalSubtitle}>Please enter the reason for cancellation</Text>
+
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Enter reason"
+              placeholderTextColor="#999"
+              value={cancelReason}
+              onChangeText={setCancelReason}
+              multiline
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalCancelBtn]}
+                onPress={() => setShowCancelModal(false)}
+              >
+                <Text style={styles.modalCancelBtnText}>Close</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalSubmitBtn]}
+                onPress={submitCancelParcel}
+                disabled={processingPayment}
+              >
+                {processingPayment ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.modalSubmitBtnText}>Submit</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -959,6 +995,69 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 14,
     color: '#666',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    width: '90%',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 15,
+    backgroundColor: '#f9f9f9',
+    height: 100,
+    textAlignVertical: 'top',
+    color: '#333',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalCancelBtn: {
+    backgroundColor: '#f0f0f0',
+  },
+  modalSubmitBtn: {
+    backgroundColor: '#FF1493',
+  },
+  modalCancelBtnText: {
+    color: '#666',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  modalSubmitBtnText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
 

@@ -175,7 +175,40 @@ const InCityUserInvoiceScreen = ({ route, navigation }) => {
             </View>
           </View>
         )}
-
+ {!paid && (
+          <View style={s.payButtons}>
+            <TouchableOpacity
+              style={[s.payBtn, s.cashBtn]}
+              onPress={() => confirmPay('CASH')}
+              disabled={paying}
+              activeOpacity={0.85}
+            >
+              {paying ? (
+                <ActivityIndicator color={WHITE} size="small" />
+              ) : (
+                <>
+                  <MaterialIcon name="cash" size={22} color={WHITE} />
+                  <Text style={s.payBtnText}>I Paid (Cash)</Text>
+                </>
+              )}
+            </TouchableOpacity>
+            {/* <TouchableOpacity
+              style={[s.payBtn, s.onlineBtn]}
+              onPress={() => confirmPay('ONLINE')}
+              disabled={paying}
+              activeOpacity={0.85}
+            >
+              {paying ? (
+                <ActivityIndicator color={WHITE} size="small" />
+              ) : (
+                <>
+                  <MaterialIcon name="credit-card-outline" size={22} color={WHITE} />
+                  <Text style={s.payBtnText}>I Paid (Online)</Text>
+                </>
+              )}
+            </TouchableOpacity> */}
+          </View>
+        )}
         {/* Booking info */}
         <View style={s.card}>
           <View style={s.cardHeader}>
@@ -227,7 +260,8 @@ const InCityUserInvoiceScreen = ({ route, navigation }) => {
               <Text style={s.cardTitle}>Fare Breakdown</Text>
             </View>
             <View style={s.divider} />
-            {actualFare ? <Row icon="dollar-sign" label="Actual Fare" value={`₹${actualFare}`} /> : null}
+            {actualFare ? <Row icon="dollar-sign" label="
+            Fare" value={`₹${actualFare}`} /> : null}
             {iCollect ? (
               <View style={s.totalRow}>
                 <Text style={s.totalLabel}>Amount to Pay</Text>
@@ -238,40 +272,7 @@ const InCityUserInvoiceScreen = ({ route, navigation }) => {
         ) : null}
 
         {/* Payment buttons — only before paying */}
-        {!paid && (
-          <View style={s.payButtons}>
-            <TouchableOpacity
-              style={[s.payBtn, s.cashBtn]}
-              onPress={() => confirmPay('CASH')}
-              disabled={paying}
-              activeOpacity={0.85}
-            >
-              {paying ? (
-                <ActivityIndicator color={WHITE} size="small" />
-              ) : (
-                <>
-                  <MaterialIcon name="cash" size={22} color={WHITE} />
-                  <Text style={s.payBtnText}>I Paid (Cash)</Text>
-                </>
-              )}
-            </TouchableOpacity>
-            {/* <TouchableOpacity
-              style={[s.payBtn, s.onlineBtn]}
-              onPress={() => confirmPay('ONLINE')}
-              disabled={paying}
-              activeOpacity={0.85}
-            >
-              {paying ? (
-                <ActivityIndicator color={WHITE} size="small" />
-              ) : (
-                <>
-                  <MaterialIcon name="credit-card-outline" size={22} color={WHITE} />
-                  <Text style={s.payBtnText}>I Paid (Online)</Text>
-                </>
-              )}
-            </TouchableOpacity> */}
-          </View>
-        )}
+       
 
         <View style={{ height: 32 }} />
       </ScrollView>

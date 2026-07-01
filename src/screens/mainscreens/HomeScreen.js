@@ -100,7 +100,10 @@ const HomeScreen = ({ navigation }) => {
 
 
   const [popupVisible, setPopupVisible] = useState(false);
-const [popupData, setPopupData] = useState(null);
+  const [popupData, setPopupData] = useState(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [selectedBookingForCancel, setSelectedBookingForCancel] = useState(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(100)).current;
@@ -540,38 +543,36 @@ const secureProfileImage = profileImageUri.replace('http://', 'https://');
   };
 
   const handleCancelRide = (booking) => {
-    Alert.alert(
-      'Cancel Ride',
-      'Are you sure you want to cancel this ride?',
-      [
-        { text: 'No', style: 'cancel' },
-        {
-          text: 'Yes, Cancel',
-          style: 'destructive',
-          onPress: async () => {
-            setIsLoading(true);
-            try {
-              const res = await dispatch(CANCEL_BOOKING({
-                role: "USER",
-                booking_id: booking?.booking_id,
-                cancel_reason: "Testing"
-              }));
+    setSelectedBookingForCancel(booking);
+    setCancelReason('');
+    setShowCancelModal(true);
+  };
 
-              if (res?.status) {
-                Alert.alert('Success', 'Ride cancelled successfully');
-                await fetchCurrentRide();
-              } else {
-                Alert.alert('Error', res?.message || 'Failed to cancel ride');
-              }
-            } catch (error) {
-              Alert.alert('Error', 'Something went wrong');
-            } finally {
-              setIsLoading(false);
-            }
-          }
-        }
-      ]
-    );
+  const submitCancelRide = async () => {
+    if (!cancelReason.trim()) {
+      Alert.alert('Error', 'Please enter reason');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const res = await dispatch(CANCEL_BOOKING({
+        role: "USER",
+        booking_id: selectedBookingForCancel?.booking_id,
+        cancel_reason: cancelReason.trim()
+      }));
+
+      if (res?.status) {
+        setShowCancelModal(false);
+        Alert.alert('Success', 'Ride cancelled successfully');
+        await fetchCurrentRide();
+      } else {
+        Alert.alert('Error', res?.message || 'Failed to cancel ride');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Something went wrong');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getStatusColor = (status) => {
@@ -2023,6 +2024,44 @@ console.log('vehicleTitle',vehicleTitle)
 
 </Modal>
 
+      <Modal visible={showCancelModal} transparent animationType="slide">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Cancel Ride</Text>
+            <Text style={styles.modalSubtitle}>Please enter the reason for cancellation</Text>
+
+            <TextInput
+              style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
+              placeholder="Enter reason"
+              placeholderTextColor="#999"
+              value={cancelReason}
+              onChangeText={setCancelReason}
+              multiline
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.cancelBtn]}
+                onPress={() => setShowCancelModal(false)}
+              >
+                <Text style={styles.cancelBtnText}>Close</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.submitBtn]}
+                onPress={submitCancelRide}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.submitBtnText}>Submit</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };

@@ -601,12 +601,13 @@ export const GET_SELF_SHARING_BOOKINGS = (serviceType = 'selfsharing', page = 1,
 };
 
 // Cancel Self Sharing Booking
-export const CANCEL_SELF_SHARING_BOOKING = (bookingId, serviceType = 'selfsharing') => async (dispatch) => {
+export const CANCEL_SELF_SHARING_BOOKING = (bookingId, cancel_reason = '', serviceType = 'selfsharing') => async (dispatch) => {
   dispatch({ type: types.CANCEL_SELF_SHARING_BOOKING_REQUEST });
 
   try {
     const response = await axiosinstance.post(`/selfsharing/booking/cancel`, {
       booking_id: bookingId,
+      cancel_reason,
     });
 
     if (response.data.status) {

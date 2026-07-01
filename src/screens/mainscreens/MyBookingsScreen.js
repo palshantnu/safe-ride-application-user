@@ -13,6 +13,7 @@ import {
   Modal,
   Dimensions,
   Linking,
+  TextInput,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Feather';
@@ -37,6 +38,9 @@ const MyBookingsScreen = ({ navigation, route }) => {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [selectedPaymentMode, setSelectedPaymentMode] = useState('ONLINE');
   const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [selectedBookingForCancel, setSelectedBookingForCancel] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -106,36 +110,34 @@ const MyBookingsScreen = ({ navigation, route }) => {
   };
 
   const handleCancelBooking = (booking) => {
-    Alert.alert(
-      'Cancel Booking',
-      `Are you sure you want to cancel this booking? Trip ID: ${booking.trip_id}`,
-      [
-        { text: 'No', style: 'cancel' },
-        {
-          text: 'Yes, Cancel',
-          style: 'destructive',
-          onPress: async () => {
-            setCancellingId(booking.id);
-            try {
-              const res = await dispatch(
-                CANCEL_SELF_SHARING_BOOKING(booking.id, serviceType)
-              );
+    setSelectedBookingForCancel(booking);
+    setCancelReason('');
+    setShowCancelModal(true);
+  };
 
-              if (res?.status) {
-                Alert.alert('Success', 'Booking cancelled successfully');
-                await fetchBookings(1, false);
-              } else {
-                Alert.alert('Error', res?.message || 'Failed to cancel booking');
-              }
-            } catch (error) {
-              Alert.alert('Error', error?.message || 'Something went wrong');
-            } finally {
-              setCancellingId(null);
-            }
-          },
-        },
-      ]
-    );
+  const submitCancelBooking = async () => {
+    if (!cancelReason.trim()) {
+      Alert.alert('Error', 'Please enter reason');
+      return;
+    }
+    setCancellingId(selectedBookingForCancel?.id);
+    try {
+      const res = await dispatch(
+        CANCEL_SELF_SHARING_BOOKING(selectedBookingForCancel?.id, cancelReason.trim(), serviceType)
+      );
+
+      if (res?.status) {
+        setShowCancelModal(false);
+        Alert.alert('Success', 'Booking cancelled successfully');
+        await fetchBookings(1, false);
+      } else {
+        Alert.alert('Error', res?.message || 'Failed to cancel booking');
+      }
+    } catch (error) {
+      Alert.alert('Error', error?.message || 'Something went wrong');
+    } finally {
+      setCancellingId(null);
+    }
   };
 
   const runOnlinePaymentGateway = (amount) => {
@@ -551,6 +553,45 @@ const MyBookingsScreen = ({ navigation, route }) => {
           </View>
         </View>
       </Modal>
+
+      <Modal visible={showCancelModal} transparent animationType="slide">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Cancel Booking</Text>
+            <Text style={styles.modalSubtitle}>Please enter the reason for cancellation</Text>
+
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Enter reason"
+              placeholderTextColor="#999"
+              value={cancelReason}
+              onChangeText={setCancelReason}
+              multiline
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.cancelBtn]}
+                onPress={() => setShowCancelModal(false)}
+              >
+                <Text style={styles.cancelBtnText}>Close</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.submitBtn]}
+                onPress={submitCancelBooking}
+                disabled={cancellingId !== null}
+              >
+                {cancellingId !== null ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.submitBtnText}>Submit</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -951,6 +992,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#FF1493',
     fontWeight: '500',
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 15,
+    backgroundColor: '#f9f9f9',
+    height: 100,
+    textAlignVertical: 'top',
+    color: '#333',
   },
 });
 

@@ -205,9 +205,10 @@ const RideDetailsScreen = ({ route, navigation }) => {
         navigation={navigation}
         showBack
         right={(
-          <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
-            <Icon name="share-social" size={22} color="#fff" />
-          </TouchableOpacity>
+          <View/>
+          // <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
+          //   <Icon name="share-social" size={22} color="#fff" />
+          // </TouchableOpacity>
         )}
       />
 
