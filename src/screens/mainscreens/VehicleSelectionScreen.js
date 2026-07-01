@@ -1829,6 +1829,7 @@ useEffect(() => {
   );
 
   const renderVehicleCard = ({ item }) => {
+    console.log('item-->', item);
     const isSelected = selectedVehicle?.id === item.id;
     const imageUri = item.image
       ? `https://sigiride.com/uploads/subservice/${item.image}`
@@ -1857,9 +1858,14 @@ useEffect(() => {
               color={isSelected ? '#fff' : '#FF1493'}
             />
           )}
+          <View>
           <Text style={[styles.vehicleTitle, isSelected && styles.vehicleTitleSelected]}>
             {item.title}
           </Text>
+         {item.description && <Text style={[styles.vehicleTitle, isSelected && styles.vehicleTitleSelected,{fontSize: 12, fontWeight: '400', color: isSelected ? '#fff' : '#666', textAlign: 'left',marginTop:10}]}>
+            {item.description}
+          </Text>}
+          </View>
           {isSelected && (
             <View style={styles.vehicleCheckBadge}>
               <Icon name="checkmark-circle" size={16} color="#4CAF50" />
@@ -2026,41 +2032,17 @@ useEffect(() => {
 
                 {isOnSpot ? (
                   <View style={styles.formCard}>
-                    {/* City Dropdown */}
-                    <Dropdown
-                      style={[styles.dropdown, cityDropdownFocus && styles.dropdownFocused]}
-                      placeholderStyle={styles.placeholderStyle}
-                      selectedTextStyle={styles.selectedTextStyle}
-                      inputSearchStyle={styles.inputSearchStyle}
-                      iconStyle={styles.iconStyle}
-                      data={getDropdownCities()}
-                      search
-                      maxHeight={300}
-                      labelField="label"
-                      valueField="value"
-                      placeholder="Select City"
-                      searchPlaceholder="Search cities..."
-                      value={cityId}
-                      onFocus={() => setCityDropdownFocus(true)}
-                      onBlur={() => setCityDropdownFocus(false)}
-                      onChange={item => {
-                        const selectedCity = cities.find(c => c.id === item.value);
-                        if (selectedCity) {
-                          setCity(selectedCity.name);
-                          setCityId(selectedCity.id);
-                        }
-                        setCityDropdownFocus(false);
-                      }}
-                      renderLeftIcon={() => (
-                        <Icon name="location-outline" size={20} color="#FF1493" style={styles.dropdownIcon} />
-                      )}
-                      renderItem={renderDropdownItem}
-                      activeColor="#FFF0F5"
-                      selectedTextProps={{ numberOfLines: 1 }}
-                      showsVerticalScrollIndicator={true}
-                      keyboardAvoiding={true}
-                      statusBarIsTranslucent={true}
-                    />
+                    {/* City Input */}
+                    <View style={[styles.dropdown, { flexDirection: 'row', alignItems: 'center' ,marginTop:10 ,width:'90%',alignSelf:'center'}]}>
+                      <Icon name="location-outline" size={20} color="#FF1493" style={styles.dropdownIcon} />
+                      <TextInput
+                        style={{ flex: 1, fontSize: 14, color: '#333', padding: 0 }}
+                        placeholder="Enter City"
+                        placeholderTextColor="#999"
+                        value={city}
+                        onChangeText={setCity}
+                      />
+                    </View>
 
                     <View style={styles.divider} />
 
@@ -2134,129 +2116,59 @@ useEffect(() => {
                   </View>
                 ) : (
                   <View style={styles.formCard}>
-                    {/* Pickup City Dropdown */}
-                    <Dropdown
-                      style={[styles.dropdown, pickupDropdownFocus && styles.dropdownFocused]}
-                      placeholderStyle={styles.placeholderStyle}
-                      selectedTextStyle={styles.selectedTextStyle}
-                      inputSearchStyle={styles.inputSearchStyle}
-                      iconStyle={styles.iconStyle}
-                      data={getDropdownCities()}
-                      search
-                      maxHeight={300}
-                      labelField="label"
-                      valueField="value"
-                      placeholder="Select Pickup City"
-                      searchPlaceholder="Search cities..."
-                      value={pickupCityId}
-                      onFocus={() => setPickupDropdownFocus(true)}
-                      onBlur={() => setPickupDropdownFocus(false)}
-                      onChange={item => {
-                        const selectedCity = cities.find(c => c.id === item.value);
-                        if (selectedCity) {
-                          setPickupCity(selectedCity.name);
-                          setPickupCityId(selectedCity.id);
+                    {/* Pickup City Input */}
+                    <View style={[styles.dropdown, { flexDirection: 'row', alignItems: 'center',marginTop:10 ,width:'90%',alignSelf:'center'}]}>
+                      <Icon name="location-outline" size={20} color="#FF1493" style={styles.dropdownIcon} />
+                      <TextInput
+                        style={{ flex: 1, fontSize: 14, color: '#333', padding: 0,width:'90%' }}
+                        placeholder="Enter Pickup City"
+                        placeholderTextColor="#999"
+                        value={pickupCity}
+                        onChangeText={(text) => {
+                          setPickupCity(text);
                           if (isRental) {
-                            setDropCity(selectedCity.name);
-                            setDropCityId(selectedCity.id);
+                            setDropCity(text);
                           }
-                        }
-                        setPickupDropdownFocus(false);
-                      }}
-                      renderLeftIcon={() => (
-                        <Icon name="location-outline" size={20} color="#FF1493" style={styles.dropdownIcon} />
-                      )}
-                      renderItem={renderDropdownItem}
-                      activeColor="#FFF0F5"
-                      selectedTextProps={{ numberOfLines: 1 }}
-                      showsVerticalScrollIndicator={true}
-                      keyboardAvoiding={true}
-                      statusBarIsTranslucent={true}
-                    />
+                        }}
+                      />
+                    </View>
 
                     {isRental && (
                       <>
                         <View style={styles.divider} />
-                        {/* To City Dropdown - for rental */}
-                        <Dropdown
-                          style={[styles.dropdown, toDropdownFocus && styles.dropdownFocused]}
-                          placeholderStyle={styles.placeholderStyle}
-                          selectedTextStyle={styles.selectedTextStyle}
-                          inputSearchStyle={styles.inputSearchStyle}
-                          iconStyle={styles.iconStyle}
-                          data={getDropdownCities()}
-                          search
-                          maxHeight={300}
-                          labelField="label"
-                          valueField="value"
-                          placeholder="Select To City"
-                          searchPlaceholder="Search cities..."
-                          value={toCityId}
-                          onFocus={() => setToDropdownFocus(true)}
-                          onBlur={() => setToDropdownFocus(false)}
-                          onChange={item => {
-                            const selectedCity = cities.find(c => c.id === item.value);
-                            if (selectedCity) {
-                              setToCity(selectedCity.name);
-                              setToCityId(selectedCity.id);
-                            }
-                            setToDropdownFocus(false);
-                          }}
-                          renderLeftIcon={() => (
-                            <Icon name="navigate-outline" size={20} color="#FF1493" style={styles.dropdownIcon} />
-                          )}
-                          renderItem={renderDropdownItem}
-                          activeColor="#FFF0F5"
-                          selectedTextProps={{ numberOfLines: 1 }}
-                          showsVerticalScrollIndicator={true}
-                          keyboardAvoiding={true}
-                          statusBarIsTranslucent={true}
-                        />
+                        {/* To City Input - for rental */}
+                        <View style={[styles.dropdown, { flexDirection: 'row', alignItems: 'center',marginTop:10 ,width:'90%',alignSelf:'center'}]}>
+                          <Icon name="navigate-outline" size={20} color="#FF1493" style={styles.dropdownIcon} />
+                          <TextInput
+                            style={{ flex: 1, fontSize: 14, color: '#333', padding: 0 }}
+                            placeholder="Enter To City"
+                            placeholderTextColor="#999"
+                            value={toCity}
+                            onChangeText={setToCity}
+                          />
+                        </View>
                       </>
                     )}
 
                     <View style={styles.divider} />
 
-                    {/* Drop City Dropdown */}
-                    {!isRental && (
-                      <>
-                        <Dropdown
-                          style={[styles.dropdown, dropDropdownFocus && styles.dropdownFocused]}
-                          placeholderStyle={styles.placeholderStyle}
-                          selectedTextStyle={styles.selectedTextStyle}
-                          inputSearchStyle={styles.inputSearchStyle}
-                          iconStyle={styles.iconStyle}
-                          data={getDropdownCities()}
-                          search
-                          maxHeight={300}
-                          labelField="label"
-                          valueField="value"
-                          placeholder="Select Drop City"
-                          searchPlaceholder="Search cities..."
-                          value={dropCityId}
-                          onFocus={() => setDropDropdownFocus(true)}
-                          onBlur={() => setDropDropdownFocus(false)}
-                          onChange={item => {
-                            const selectedCity = cities.find(c => c.id === item.value);
-                            if (selectedCity) {
-                              setDropCity(selectedCity.name);
-                              setDropCityId(selectedCity.id);
-                            }
-                            setDropDropdownFocus(false);
-                          }}
-                          renderLeftIcon={() => (
-                            <Icon name="flag-outline" size={20} color="#FF1493" style={styles.dropdownIcon} />
-                          )}
-                          renderItem={renderDropdownItem}
-                          activeColor="#FFF0F5"
-                          selectedTextProps={{ numberOfLines: 1 }}
-                          showsVerticalScrollIndicator={true}
-                          keyboardAvoiding={true}
-                          statusBarIsTranslucent={true}
-                        />
+                    {/* Drop City Input */}
+                    {/* {!isRental && (
+                      <> */}
+                        <View style={[styles.dropdown, { flexDirection: 'row', alignItems: 'center',marginTop:10 ,width:'90%',alignSelf:'center' }]}>
+                          <Icon name="flag-outline" size={20} color="#FF1493" style={styles.dropdownIcon} />
+                          <TextInput
+                            style={{ flex: 1, fontSize: 14, color: '#333', padding: 0 }}
+                            placeholder="Enter Drop City"
+                            placeholderTextColor="#999"
+                            value={dropCity}
+                            onChangeText={setDropCity}
+                            editable={!isRental}
+                          />
+                        </View>
                         <View style={styles.divider} />
-                      </>
-                    )}
+                      {/* </>
+                    )} */}
 
                     {/* Person */}
                     <View style={styles.inputGroup}>

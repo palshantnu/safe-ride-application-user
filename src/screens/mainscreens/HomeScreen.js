@@ -832,7 +832,7 @@ const secureProfileImage = profileImageUri.replace('http://', 'https://');
       ? booking?.driver_name
       : ['TOKEN_PAID', 'ARRIVED', 'STARTED'].includes(statusKey);
       
-    const showOtp = statusKey === 'ARRIVED' || statusKey === 'BALANCE_PAID';
+    const showOtp =  statusKey === 'BALANCE_PAID';
     // const vehicleTitle = booking?.vehicle_type;
     const vehicleTitle = joinLocationParts(booking?.vehicle_type, booking?.vehicle_model);
     const vehicleMeta = joinLocationParts(booking?.vehicle_color, booking?.vehicle_number);
@@ -840,6 +840,7 @@ const secureProfileImage = profileImageUri.replace('http://', 'https://');
 console.log('vehicleTitle',vehicleTitle)
     const totalTopupAmount = booking?.topups?.reduce((sum, t) => sum + parseFloat(t.topup_amount), 0) || 0;
     const totalFare = parseFloat(booking?.total_fare) + totalTopupAmount;
+    const token_price = parseFloat(booking?.token_price);
 
     return (
       <Animated.View
@@ -879,6 +880,8 @@ console.log('vehicleTitle',vehicleTitle)
             <View>
               <Text style={styles.fareLabel}>Total Fare</Text>
               <Text style={styles.fareAmount}>₹{totalFare}</Text>
+              <Text style={styles.fareLabel}>Token Price</Text>
+              <Text style={styles.fareAmount}>₹{token_price}</Text>
               {totalTopupAmount > 0 && (
                 <Text style={styles.baseFare}>Base: ₹{booking?.plan_price}</Text>
               )}
@@ -2947,6 +2950,7 @@ alignSelf: 'flex-start',
     borderWidth: 1,
     borderColor: '#F0F0F0',
     marginTop: 10,
+    marginBottom: 10,
   },
   driverRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   driverAvatar: {

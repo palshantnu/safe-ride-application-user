@@ -1659,10 +1659,14 @@ useEffect(() => {
           ) : (
             <Icon name={getSubServiceIcon(item.title)} size={36} color={isSelected ? '#fff' : '#FF1493'} />
           )}
+          <View>
           <Text style={[styles.vehicleTitle, isSelected && styles.vehicleTitleSelected]}>
             {item.title}
           </Text>
-
+ {item.description && <Text style={[styles.vehicleTitle, isSelected && styles.vehicleTitleSelected,{fontSize: 12, fontWeight: '400', color: isSelected ? '#fff' : '#666', textAlign: 'left',marginTop:10}]}>
+            {item.description}
+          </Text>}
+          </View>
           {isSelected && (
             <View style={styles.vehicleCheckBadge}>
               <Icon name="checkmark-circle" size={16} color="#4CAF50" />
@@ -1812,41 +1816,17 @@ useEffect(() => {
                 <Text style={styles.sectionTitle}>Details</Text>
 
                 <View style={styles.formCard}>
-                  {/* pickup city - Dropdown */}
-                  <Dropdown
-                    style={[styles.dropdown, pickupDropdownFocus && styles.dropdownFocused]}
-                    placeholderStyle={styles.placeholderStyle}
-                    selectedTextStyle={styles.selectedTextStyle}
-                    inputSearchStyle={styles.inputSearchStyle}
-                    iconStyle={styles.iconStyle}
-                    data={getDropdownCities()}
-                    search
-                    maxHeight={300}
-                    labelField="label"
-                    valueField="value"
-                    placeholder="Select Pickup City"
-                    searchPlaceholder="Search cities..."
-                    value={pickupCityId}
-                    onFocus={() => setPickupDropdownFocus(true)}
-                    onBlur={() => setPickupDropdownFocus(false)}
-                    onChange={item => {
-                      const selectedCity = cities.find(c => c.id === item.value);
-                      if (selectedCity) {
-                        setPickupCity(selectedCity.name);
-                        setPickupCityId(selectedCity.id);
-                      }
-                      setPickupDropdownFocus(false);
-                    }}
-                    renderLeftIcon={() => (
-                      <Icon name="location-outline" size={20} color="#FF1493" style={styles.dropdownIcon} />
-                    )}
-                    renderItem={renderDropdownItem}
-                    activeColor="#FFF0F5"
-                    selectedTextProps={{ numberOfLines: 1 }}
-                    showsVerticalScrollIndicator={true}
-                    keyboardAvoiding={true}
-                    statusBarIsTranslucent={true}
-                  />
+                  {/* pickup city - Input */}
+                  <View style={[styles.dropdown, { flexDirection: 'row', alignItems: 'center' }]}>
+                    <Icon name="location-outline" size={20} color="#FF1493" style={styles.dropdownIcon} />
+                    <TextInput
+                      style={{ flex: 1, fontSize: 14, color: '#333', padding: 0 }}
+                      placeholder="Enter Pickup City"
+                      placeholderTextColor="#999"
+                      value={pickupCity}
+                      onChangeText={setPickupCity}
+                    />
+                  </View>
 
                   <View style={styles.divider} />
 
@@ -1891,41 +1871,17 @@ useEffect(() => {
                   </View>
                   <View style={styles.divider} />
 
-                  {/* drop city - Dropdown */}
-                  <Dropdown
-                    style={[styles.dropdown, dropDropdownFocus && styles.dropdownFocused]}
-                    placeholderStyle={styles.placeholderStyle}
-                    selectedTextStyle={styles.selectedTextStyle}
-                    inputSearchStyle={styles.inputSearchStyle}
-                    iconStyle={styles.iconStyle}
-                    data={getDropdownCities()}
-                    search
-                    maxHeight={300}
-                    labelField="label"
-                    valueField="value"
-                    placeholder="Select Drop City"
-                    searchPlaceholder="Search cities..."
-                    value={dropCityId}
-                    onFocus={() => setDropDropdownFocus(true)}
-                    onBlur={() => setDropDropdownFocus(false)}
-                    onChange={item => {
-                      const selectedCity = cities.find(c => c.id === item.value);
-                      if (selectedCity) {
-                        setDropCity(selectedCity.name);
-                        setDropCityId(selectedCity.id);
-                      }
-                      setDropDropdownFocus(false);
-                    }}
-                    renderLeftIcon={() => (
-                      <Icon name="navigate-outline" size={20} color="#FF1493" style={styles.dropdownIcon} />
-                    )}
-                    renderItem={renderDropdownItem}
-                    activeColor="#FFF0F5"
-                    selectedTextProps={{ numberOfLines: 1 }}
-                    showsVerticalScrollIndicator={true}
-                    keyboardAvoiding={true}
-                    statusBarIsTranslucent={true}
-                  />
+                  {/* drop city - Input */}
+                  <View style={[styles.dropdown, { flexDirection: 'row', alignItems: 'center' }]}>
+                    <Icon name="navigate-outline" size={20} color="#FF1493" style={styles.dropdownIcon} />
+                    <TextInput
+                      style={{ flex: 1, fontSize: 14, color: '#333', padding: 0 }}
+                      placeholder="Enter Drop City"
+                      placeholderTextColor="#999"
+                      value={dropCity}
+                      onChangeText={setDropCity}
+                    />
+                  </View>
 
                   <View style={styles.divider} />
 
