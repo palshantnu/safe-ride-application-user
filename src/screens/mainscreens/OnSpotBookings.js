@@ -12,12 +12,14 @@ import {
   Modal,
   TextInput,
   SectionList,
+  Image,
+  Linking,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import axios from '../../axios/axiosinstance';
+import axios, { IMAGE_URL } from '../../axios/axiosinstance';
 import { useSelector } from 'react-redux';
 import RazorpayCheckout from 'react-native-razorpay';
 
@@ -431,14 +433,44 @@ const OnSpotBookings = ({ navigation }) => {
 
           {/* Driver Info (if assigned) */}
           {booking.driver_id && (
-            <View style={styles.driverInfo}>
-              <Icon name="person-circle-outline" size={18} color="#4CAF50" />
-              <Text style={styles.driverText}>Driver Assigned (ID: {booking.driver_id})</Text>
+            <View style={styles.driverCard}>
+              <View style={styles.driverRow}>
+                <View style={styles.driverAvatar}>
+                  {booking.driver_profile ? (
+                    <Image
+                      source={{
+                        uri: booking.driver_profile.toString().startsWith('http')
+                          ? booking.driver_profile
+                          : `${'https://sigiride.com/uploads/driver_profiles/'}${booking.driver_profile.replace(/^\/+/, '')}`
+                      }}
+                      style={styles.driverProfileImage}
+                    />
+                  ) : (
+                    <Icon name="person" size={24} color="#FF1493" />
+                  )}
+                </View>
+                <View style={styles.driverMeta}>
+                  <Text style={styles.driverName}>{booking.driver_name || 'Driver Assigned'}</Text>
+                  {booking.driver_phone ? (
+                    <TouchableOpacity style={styles.callRow} onPress={() => Linking.openURL(`tel:${booking.driver_phone}`)}>
+                      <Icon name="call" size={14} color="#4CAF50" />
+                      <Text style={styles.driverPhone}>{booking.driver_phone}</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <Text style={styles.driverPhone}>ID: {booking.driver_id}</Text>
+                  )}
+                </View>
+                {booking.driver_phone ? (
+                  <TouchableOpacity style={styles.callBtn} onPress={() => Linking.openURL(`tel:${booking.driver_phone}`)}>
+                    <Icon name="call" size={20} color="#fff" />
+                  </TouchableOpacity>
+                ) : null}
+              </View>
             </View>
           )}
 
           {/* OTP Display (if token paid and not completed) */}
-          {OTP && status !== 'COMPLETED' && status !== 'CANCELLED' && status !== 'PENDING' && balance_paid === 1 && (
+          {OTP && status == 'ARRIVED' && booking.balance_paid == 1 && (
             <View style={styles.otpHorizontalCard}>
               <Text style={styles.otpHorizontalLabel}>Share OTP to captain</Text>
               <Text style={styles.otpHorizontalValue}>{OTP}</Text>
@@ -1006,6 +1038,41 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#4CAF50',
     fontWeight: '500',
+  },
+  driverCard: {
+    backgroundColor: '#F9F9F9',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  driverRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  driverAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFF0F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  driverProfileImage: {
+    width: '100%',
+    height: '100%',
+  },
+  driverMeta: { flex: 1 },
+  driverName: { fontSize: 15, fontWeight: '700', color: '#222' },
+  callRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  driverPhone: { fontSize: 13, color: '#4CAF50', fontWeight: '500' },
+  callBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#4CAF50',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   otpContainer: {
     backgroundColor: '#FFF3E0',

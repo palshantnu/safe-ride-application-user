@@ -326,7 +326,7 @@ const closePopup = async () => {
     if (/^(https?:|file:|content:|data:)/.test(normalizedProfile)) {
       return normalizedProfile.replace('http://', 'https://');
     }
-    return `${IMAGE_URL}${normalizedProfile.replace(/^\/+/, '')}`;
+    return `${'https://sigiride.com/uploads/driver_profiles/'}${normalizedProfile.replace(/^\/+/, '')}`;
   };
 
   const profileImageUri = profileImageError ? '' : getProfileImageUri();
@@ -1167,6 +1167,7 @@ console.log('vehicleTitle',vehicleTitle)
   };
 
   const renderActiveSelfSharingBooking = (booking, index) => {
+    console.log('booking===>', booking);
     const status = getDisplayStatus(booking);
     const sharingPickupLocation = joinLocationParts(booking?.from_city, booking?.pickup_address);
     const sharingDropLocation = booking?.to_city;
@@ -1261,7 +1262,7 @@ console.log('vehicleTitle',vehicleTitle)
           </View>
         </View>
 
-        {booking?.otp ? (
+        {booking?.otp  && booking.balance_paid === 1 && booking.status =='CONFIRMED'? (
           <View style={styles.otpHorizontalContainer}>
             <Text style={styles.otpHorizontalLabel}>Share OTP to captain</Text>
             <Text style={styles.otpHorizontalValue}>{booking.otp}</Text>
@@ -1283,12 +1284,13 @@ console.log('vehicleTitle',vehicleTitle)
   };
 
   const renderActiveOnSpotBooking = (booking, index) => {
+    console.log('booking===>', booking);
     const status = getDisplayStatus(booking);
     const statusKey = toStatusKey(status);
     const address = joinLocationParts(booking?.full_address, booking?.landmark);
     const scheduleDateTime = formatDateTimeValue(booking?.schedule_datetime);
     const totalAmount = parseFloat(booking?.total_amount || 0);
-    const showOtp = booking?.otp && !['PENDING', 'COMPLETED', 'CANCELLED'].includes(statusKey);
+    const showOtp = booking?.otp && booking?.status === 'ARRIVED' && booking.balance_paid == 1;
 
     return (
       <Animated.View
@@ -1378,15 +1380,41 @@ console.log('vehicleTitle',vehicleTitle)
           </View>
         </View>
 
-        {booking?.driver_id ? (
-          <View style={styles.driverInfo}>
-            <View style={styles.driverDetail}>
-              <FontAwesome5 name="user-circle" size={16} color="#FF1493" />
-              <Text style={styles.driverText}>Driver Assigned</Text>
+        {booking?.driver_id ? (() => {
+         
+          return (
+            <View style={styles.driverCard}>
+              <View style={styles.driverRow}>
+                <View style={styles.driverAvatar}>
+                  {booking?.driver_profile ? (
+                    <Image
+                      source={{ uri: `https://sigiride.com/uploads/driver_profiles/${booking?.driver_profile}` }}
+                      style={styles.driverProfileImage}
+                    />
+                  ) : (
+                    <Icon name="person" size={24} color="#FF1493" />
+                  )}
+                </View>
+                <View style={styles.driverMeta}>
+                  <Text style={styles.driverName}>{booking.driver_name || 'Driver Assigned'}</Text>
+                  {booking.driver_phone ? (
+                    <TouchableOpacity style={styles.callRow} onPress={() => Linking.openURL(`tel:${booking.driver_phone}`)}>
+                      <Icon name="phone" size={14} color="#4CAF50" />
+                      <Text style={styles.driverPhone}>{booking.driver_phone}</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <Text style={styles.driverPhone}>ID: {booking.driver_id}</Text>
+                  )}
+                </View>
+                {booking.driver_phone ? (
+                  <TouchableOpacity style={styles.callBtn} onPress={() => Linking.openURL(`tel:${booking.driver_phone}`)}>
+                    <Icon name="phone-call" size={20} color="#fff" />
+                  </TouchableOpacity>
+                ) : null}
+              </View>
             </View>
-            <Text style={styles.driverText}>ID: {booking.driver_id}</Text>
-          </View>
-        ) : null}
+          );
+        })() : null}
 
         {showOtp ? (
           <View style={styles.otpHorizontalContainer}>

@@ -120,10 +120,11 @@ const MyBookingsScreen = ({ navigation, route }) => {
       Alert.alert('Error', 'Please enter reason');
       return;
     }
+
     setCancellingId(selectedBookingForCancel?.id);
     try {
       const res = await dispatch(
-        CANCEL_SELF_SHARING_BOOKING(selectedBookingForCancel?.id, cancelReason.trim(), serviceType)
+        CANCEL_SELF_SHARING_BOOKING(selectedBookingForCancel?.booking_id, cancelReason.trim(), serviceType)
       );
 
       if (res?.status) {
@@ -134,7 +135,8 @@ const MyBookingsScreen = ({ navigation, route }) => {
         Alert.alert('Error', res?.message || 'Failed to cancel booking');
       }
     } catch (error) {
-      Alert.alert('Error', error?.message || 'Something went wrong');
+      console.log('Error cancelling booking:',  error.response?.data?.message);
+      Alert.alert('Error', error.response?.data?.message || 'Something went wrong');
     } finally {
       setCancellingId(null);
     }
@@ -238,7 +240,7 @@ const MyBookingsScreen = ({ navigation, route }) => {
   hour12: true,
 });
 
-    const canCancel = !['COMPLETED', 'CANCELLED'].includes(status);
+    const canCancel = !['COMPLETED', 'CANCELLED','STARTED'].includes(status);
 
     return (
       <View style={styles.bookingCard}>
@@ -323,7 +325,7 @@ const MyBookingsScreen = ({ navigation, route }) => {
             </Text>
           </View>
         )}
-        {item.otp ? (
+        {item.otp   && item.balance_paid === 1  && item.status =='CONFIRMED' ? (
           <View style={styles.otpHorizontalCard}>
             <Text style={styles.otpHorizontalLabel}>Share OTP to captain</Text>
             <Text style={styles.otpHorizontalValue}>{item.otp}</Text>
@@ -474,14 +476,14 @@ const MyBookingsScreen = ({ navigation, route }) => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Pay Balance Amount</Text>
-            {selectedBooking && (
+            <Text style={styles.modalTitle}>Pay Balance ₹{selectedBooking?.balance_amount}</Text>
+            {/* {selectedBooking && (
               <Text style={styles.modalSubtitle}>
                 Amount: ₹{selectedBooking.balance_amount}
               </Text>
-            )}
+            )} */}
 
-            <Text style={styles.paymentModeTitle}>Pay Balance</Text>
+            {/* <Text style={styles.paymentModeTitle}>Pay Balance</Text> */}
             <View style={styles.paymentModeContainer}>
               <TouchableOpacity
                 style={[
@@ -929,7 +931,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 18,
   },
   modalSubtitle: {
     fontSize: 14,

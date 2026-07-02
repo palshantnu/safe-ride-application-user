@@ -603,7 +603,7 @@ export const GET_SELF_SHARING_BOOKINGS = (serviceType = 'selfsharing', page = 1,
 // Cancel Self Sharing Booking
 export const CANCEL_SELF_SHARING_BOOKING = (bookingId, cancel_reason = '', serviceType = 'selfsharing') => async (dispatch) => {
   dispatch({ type: types.CANCEL_SELF_SHARING_BOOKING_REQUEST });
-
+console.log('CANCEL_SELF_SHARING_BOOKING Params:', { bookingId, cancel_reason, serviceType });
   try {
     const response = await axiosinstance.post(`/selfsharing/booking/cancel`, {
       booking_id: bookingId,
@@ -624,10 +624,10 @@ export const CANCEL_SELF_SHARING_BOOKING = (bookingId, cancel_reason = '', servi
 
     return response.data;
   } catch (error) {
-    console.log('CANCEL_SELF_SHARING_BOOKING Error:', error);
+    console.log('CANCEL_SELF_SHARING_BOOKING Error:',  error.response?.data?.message);
     dispatch({
       type: types.CANCEL_SELF_SHARING_BOOKING_FAILURE,
-      payload: error.message,
+      payload:  error.response?.data?.message || error.message || 'Network error',
     });
     throw error;
   }
