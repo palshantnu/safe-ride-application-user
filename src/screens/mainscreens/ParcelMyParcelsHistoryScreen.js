@@ -536,10 +536,14 @@ console.log('parcel_booking_id', item?.parcel_booking_id,'user_status', user_sta
 
             {showPayBalance && (
               <View>
-                <Text style={styles.payBalanceTitle}>Pay Balance Amount (₹{balanceAmount.toFixed(2)})</Text>
+                <Text style={styles.payBalanceTitle}>Pay Balance (₹{balanceAmount.toFixed(2)})</Text>
                 <View style={styles.payOptionsRow}>
                   <TouchableOpacity
-                    style={[styles.payOption, styles.payOptionOnline]}
+                    style={[
+                      styles.payOption,
+                      styles.payOptionOnline,
+                      { flexDirection: 'column', paddingVertical: 8 }
+                    ]}
                     onPress={() => handlePayBalance({ parcel: item, paymentMode: 'ONLINE' })}
                     activeOpacity={0.9}
                     disabled={processingPayment}
@@ -547,17 +551,25 @@ console.log('parcel_booking_id', item?.parcel_booking_id,'user_status', user_sta
                     {processingPayment && paymentType === 'balance' ? (
                       <ActivityIndicator size="small" color="#fff" />
                     ) : (
-                      <Text style={styles.payOptionText}>Pay Online</Text>
+                      <>
+                        <Text style={styles.payOptionText}>Pay to Sigi</Text>
+                        <Text style={{ fontSize: 10, color: '#fff', opacity: 0.8, marginTop: 2, fontWeight: '500' }}>only Online</Text>
+                      </>
                     )}
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[styles.payOption, styles.payOptionCash]}
+                    style={[
+                      styles.payOption,
+                      styles.payOptionCash,
+                      { flexDirection: 'column', paddingVertical: 8 }
+                    ]}
                     onPress={() => handlePayBalance({ parcel: item, paymentMode: 'CASH' })}
                     activeOpacity={0.9}
                     disabled={processingPayment}
                   >
-                    <Text style={styles.payOptionText}>Pay Cash</Text>
+                    <Text style={styles.payOptionText}>Pay to Captain</Text>
+                    <Text style={{ fontSize: 10, color: '#fff', opacity: 0.8, marginTop: 2, fontWeight: '500' }}>Cash/Online</Text>
                   </TouchableOpacity>
                 </View>
               </View>

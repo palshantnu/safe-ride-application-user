@@ -82,6 +82,7 @@ const HomeScreen = ({ navigation }) => {
   const [showPickupModal, setShowPickupModal] = useState(false);
   const [pickupAddress, setPickupAddress] = useState('');
   const [pickupLocation, setPickupLocation] = useState('');
+  const [landmark, setLandmark] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [greeting, setGreeting] = useState('');
   const [greetingIcon, setGreetingIcon] = useState('');
@@ -403,6 +404,10 @@ const secureProfileImage = profileImageUri.replace('http://', 'https://');
       Alert.alert('Error', 'Please enter pickup address');
       return;
     }
+    if (!landmark.trim()) {
+      Alert.alert('Error', 'Please enter landmark');
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -416,6 +421,7 @@ const secureProfileImage = profileImageUri.replace('http://', 'https://');
         booking_id: selectedBooking?.booking_id,
         pickup_address: pickupAddress,
         pickup_location: pickupLocation || '23.2599,77.4126',
+        landmark: landmark,
       };
       console.log('payload---=>', payload);
 
@@ -427,6 +433,7 @@ const secureProfileImage = profileImageUri.replace('http://', 'https://');
         setShowPickupModal(false);
         setPickupAddress('');
         setPickupLocation('');
+        setLandmark('');
         setSelectedBooking(null);
         await fetchCurrentRide();
       } else {
@@ -468,7 +475,7 @@ const secureProfileImage = profileImageUri.replace('http://', 'https://');
   };
 
   const submitRemainingPayment = async () => {
-    const remainingAmount = selectedBooking?.balance_amount || selectedBooking?.plan_price;
+    const remainingAmount = selectedBooking?.balance_amount || selectedBooking?.total_fare;
     const token_amount = selectedBooking?.token_amount;
     setIsLoading(true);
     try {
@@ -694,7 +701,7 @@ const secureProfileImage = profileImageUri.replace('http://', 'https://');
                 <>
                   <FontAwesome5 name="rupee-sign" size={16} color="#fff" />
                   <Text style={styles.actionButtonText}>
-                    Pay Remaining ₹{parseInt(booking?.plan_price, 10) - parseInt(booking?.token_amount, 10)}
+                    Pay Remaining ₹{parseInt(booking?.total_fare, 10) - parseInt(booking?.token_amount, 10)}
                   </Text>
                 </>
               )}
@@ -1634,7 +1641,7 @@ console.log('vehicleTitle',vehicleTitle)
               const totalTopup = booking.topups?.reduce((sum, t) => sum + parseFloat(t.topup_amount || 0), 0) || 0;
               const fare = booking.is_incity
                 ? parseFloat(booking.final_fare || booking.actual_fare || 0)
-                : parseFloat(booking.plan_price || 0) + totalTopup;
+                : parseFloat(booking.total_fare || 0) + totalTopup;
               const formattedDate = new Date(booking.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
               const statusDisplay = status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || '';
 
@@ -1766,6 +1773,14 @@ console.log('vehicleTitle',vehicleTitle)
 
             <TextInput
               style={styles.input}
+              placeholder="Enter Landmark"
+              placeholderTextColor={'#000'}
+              value={landmark}
+              onChangeText={setLandmark}
+            />
+
+            <TextInput
+              style={styles.input}
               placeholder="Pickup location - Optional"
               placeholderTextColor={'#000'}
               value={pickupLocation}
@@ -1779,6 +1794,7 @@ console.log('vehicleTitle',vehicleTitle)
                   setShowPickupModal(false);
                   setPickupAddress('');
                   setPickupLocation('');
+                  setLandmark('');
                 }}
               >
                 <Text style={styles.cancelBtnText}>Cancel</Text>
@@ -1806,57 +1822,75 @@ console.log('vehicleTitle',vehicleTitle)
         animationType="slide"
         transparent={true}
         onRequestClose={() => setShowRemainingPayModal(false)}
-      >
+      >{
+        console.log('selectedBooking', selectedBooking)
+      }
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Pay Remaining Balance</Text>
+            {/* <Text style={styles.modalTitle}>Pay Remaining Balance</Text>
             <Text style={styles.modalSubtitle}>
-              Amount: ₹{parseInt(selectedBooking?.plan_price, 10) - parseInt(selectedBooking?.token_amount, 10)}
-            </Text>
+              Amount: ₹{parseInt(selectedBooking?.total_fare, 10) - parseInt(selectedBooking?.token_amount, 10)}
+            </Text> */}
 
-            <Text style={styles.paymentModeTitle}>Select Payment Mode</Text>
+            <Text style={{...styles.modalTitle,marginBottom:10}}>Pay Balance ₹{parseInt(selectedBooking?.total_fare, 10) - parseInt(selectedBooking?.token_amount, 10)}</Text>
             <View style={styles.paymentModeContainer}>
               <TouchableOpacity
                 style={[
                   styles.paymentModeOption,
-                  selectedPaymentMode === 'ONLINE' && styles.paymentModeSelected
+                  selectedPaymentMode === 'ONLINE' && styles.paymentModeSelected,
+                  { flexDirection: 'column', paddingVertical: 8 }
                 ]}
                 onPress={() => setSelectedPaymentMode('ONLINE')}
               >
-                <Icon
-                  name="credit-card"
-                  size={18}
-                  color={selectedPaymentMode === 'ONLINE' ? '#fff' : '#FF1493'}
-                />
                 <Text
                   style={[
                     styles.paymentModeText,
-                    selectedPaymentMode === 'ONLINE' && styles.paymentModeTextSelected
+                    selectedPaymentMode === 'ONLINE' && styles.paymentModeTextSelected,
+                    { fontSize: 13, fontWeight: '700' }
                   ]}
                 >
-                  Online
+                  Pay to Sigi
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 10,
+                    color: selectedPaymentMode === 'ONLINE' ? '#fff' : '#FF1493',
+                    opacity: 0.8,
+                    marginTop: 2,
+                    fontWeight: '500'
+                  }}
+                >
+                  only Online
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[
                   styles.paymentModeOption,
-                  selectedPaymentMode === 'CASH' && styles.paymentModeSelected
+                  selectedPaymentMode === 'CASH' && styles.paymentModeSelected,
+                  { flexDirection: 'column', paddingVertical: 8 }
                 ]}
                 onPress={() => setSelectedPaymentMode('CASH')}
               >
-                <FontAwesome5
-                  name="rupee-sign"
-                  size={18}
-                  color={selectedPaymentMode === 'CASH' ? '#fff' : '#FF1493'}
-                />
                 <Text
                   style={[
                     styles.paymentModeText,
-                    selectedPaymentMode === 'CASH' && styles.paymentModeTextSelected
+                    selectedPaymentMode === 'CASH' && styles.paymentModeTextSelected,
+                    { fontSize: 13, fontWeight: '700' }
                   ]}
                 >
-                  Cash
+                  Pay to Captain
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 10,
+                    color: selectedPaymentMode === 'CASH' ? '#fff' : '#FF1493',
+                    opacity: 0.8,
+                    marginTop: 2,
+                    fontWeight: '500'
+                  }}
+                >
+                  Cash/Online
                 </Text>
               </TouchableOpacity>
             </View>
@@ -1910,49 +1944,65 @@ console.log('vehicleTitle',vehicleTitle)
               Reason: {selectedTopup?.reason}
             </Text>
 
-            <Text style={styles.paymentModeTitle}>Select Payment Mode</Text>
+            <Text style={styles.paymentModeTitle}>Pay Balance</Text>
             <View style={styles.paymentModeContainer}>
               <TouchableOpacity
                 style={[
                   styles.paymentModeOption,
-                  selectedPaymentMode === 'ONLINE' && styles.paymentModeSelected
+                  selectedPaymentMode === 'ONLINE' && styles.paymentModeSelected,
+                  { flexDirection: 'column', paddingVertical: 8 }
                 ]}
                 onPress={() => setSelectedPaymentMode('ONLINE')}
               >
-                <Icon
-                  name="credit-card"
-                  size={18}
-                  color={selectedPaymentMode === 'ONLINE' ? '#fff' : '#FF1493'}
-                />
                 <Text
                   style={[
                     styles.paymentModeText,
-                    selectedPaymentMode === 'ONLINE' && styles.paymentModeTextSelected
+                    selectedPaymentMode === 'ONLINE' && styles.paymentModeTextSelected,
+                    { fontSize: 13, fontWeight: '700' }
                   ]}
                 >
-                  Online
+                  Pay to Sigi
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 10,
+                    color: selectedPaymentMode === 'ONLINE' ? '#fff' : '#FF1493',
+                    opacity: 0.8,
+                    marginTop: 2,
+                    fontWeight: '500'
+                  }}
+                >
+                  only Online
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[
                   styles.paymentModeOption,
-                  selectedPaymentMode === 'CASH' && styles.paymentModeSelected
+                  selectedPaymentMode === 'CASH' && styles.paymentModeSelected,
+                  { flexDirection: 'column', paddingVertical: 8 }
                 ]}
                 onPress={() => setSelectedPaymentMode('CASH')}
               >
-                <FontAwesome5
-                  name="rupee-sign"
-                  size={18}
-                  color={selectedPaymentMode === 'CASH' ? '#fff' : '#FF1493'}
-                />
                 <Text
                   style={[
                     styles.paymentModeText,
-                    selectedPaymentMode === 'CASH' && styles.paymentModeTextSelected
+                    selectedPaymentMode === 'CASH' && styles.paymentModeTextSelected,
+                    { fontSize: 13, fontWeight: '700' }
                   ]}
                 >
-                  Cash
+                  Pay to Captain
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 10,
+                    color: selectedPaymentMode === 'CASH' ? '#fff' : '#FF1493',
+                    opacity: 0.8,
+                    marginTop: 2,
+                    fontWeight: '500'
+                  }}
+                >
+                  Cash/Online
                 </Text>
               </TouchableOpacity>
             </View>
@@ -1976,7 +2026,7 @@ console.log('vehicleTitle',vehicleTitle)
                 {isLoading ? (
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
-                  <Text style={styles.submitBtnText}>
+                  <Text style={{...styles.submitBtnText,textAlign:'center'}}>
                     Pay ₹{selectedTopup?.topup_amount} {selectedPaymentMode}
                   </Text>
                 )}

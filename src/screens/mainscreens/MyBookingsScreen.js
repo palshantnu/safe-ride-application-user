@@ -481,27 +481,35 @@ const MyBookingsScreen = ({ navigation, route }) => {
               </Text>
             )}
 
-            <Text style={styles.paymentModeTitle}>Select Payment Mode</Text>
+            <Text style={styles.paymentModeTitle}>Pay Balance</Text>
             <View style={styles.paymentModeContainer}>
               <TouchableOpacity
                 style={[
                   styles.paymentModeOption,
                   selectedPaymentMode === 'ONLINE' && styles.paymentModeSelected,
+                  { flexDirection: 'column', paddingVertical: 8 }
                 ]}
                 onPress={() => setSelectedPaymentMode('ONLINE')}
               >
-                <Icon
-                  name="credit-card"
-                  size={18}
-                  color={selectedPaymentMode === 'ONLINE' ? '#fff' : '#FF1493'}
-                />
                 <Text
                   style={[
                     styles.paymentModeText,
                     selectedPaymentMode === 'ONLINE' && styles.paymentModeTextSelected,
+                    { fontSize: 13, fontWeight: '700' }
                   ]}
                 >
-                  Online
+                  Pay to Sigi
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 10,
+                    color: selectedPaymentMode === 'ONLINE' ? '#fff' : '#FF1493',
+                    opacity: 0.8,
+                    marginTop: 2,
+                    fontWeight: '500'
+                  }}
+                >
+                  only Online
                 </Text>
               </TouchableOpacity>
 
@@ -509,21 +517,29 @@ const MyBookingsScreen = ({ navigation, route }) => {
                 style={[
                   styles.paymentModeOption,
                   selectedPaymentMode === 'CASH' && styles.paymentModeSelected,
+                  { flexDirection: 'column', paddingVertical: 8 }
                 ]}
                 onPress={() => setSelectedPaymentMode('CASH')}
               >
-                <FontAwesome5
-                  name="rupee-sign"
-                  size={18}
-                  color={selectedPaymentMode === 'CASH' ? '#fff' : '#FF1493'}
-                />
                 <Text
                   style={[
                     styles.paymentModeText,
                     selectedPaymentMode === 'CASH' && styles.paymentModeTextSelected,
+                    { fontSize: 13, fontWeight: '700' }
                   ]}
                 >
-                  Cash
+                  Pay to Captain
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 10,
+                    color: selectedPaymentMode === 'CASH' ? '#fff' : '#FF1493',
+                    opacity: 0.8,
+                    marginTop: 2,
+                    fontWeight: '500'
+                  }}
+                >
+                  Cash/Online
                 </Text>
               </TouchableOpacity>
             </View>

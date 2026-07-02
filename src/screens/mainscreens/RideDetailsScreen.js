@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Linking,
   Alert,
   Image,
+  Modal,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
@@ -158,19 +159,24 @@ const RideDetailsScreen = ({ route, navigation }) => {
             <Text style={styles.topupDate}>
               Added on: {new Date(topup.created_at).toLocaleString()}
             </Text>
-            {topup.topup_otp && (
+            {/* {topup.topup_otp && (
               <View style={styles.otpContainer}>
                 <Text style={styles.otpLabel}>Verification OTP</Text>
                 <Text style={styles.otpValue}>{topup.topup_otp}</Text>
               </View>
-            )}
+            )} */}
             {index < ride.topups.length - 1 && <View style={styles.topupDivider} />}
           </View>
         ))}
       </View>
     );
   };
-
+  const [selectedImage, setSelectedImage] = useState(null);
+const [imageModalVisible, setImageModalVisible] = useState(false);
+const openImage = (image) => {
+  setSelectedImage(image);
+  setImageModalVisible(true);
+};
   const renderMeterImages = () => {
     if (!ride.meter_images || ride.meter_images.length === 0) return null;
 
@@ -183,7 +189,18 @@ const RideDetailsScreen = ({ route, navigation }) => {
         <View style={styles.imageList}>
           {ride.meter_images.map((image, index) => (
             <View key={index} style={styles.imageItem}>
-              <FontAwesome5 name="image" size={24} color="#FF1493" />
+           
+        <TouchableOpacity
+          key={index}
+          onPress={() => openImage(`https://sigiride.com/${image?.image}`)}
+        >
+          <Image
+            source={{ uri: `https://sigiride.com/${image?.image}` }}
+            style={styles.meterImage}
+            resizeMode="cover"
+          />
+        </TouchableOpacity>
+
               <View style={styles.imageInfo}>
                 <Text style={styles.imageType}>{image.image_type}</Text>
                 <Text style={styles.imageDate}>
@@ -250,12 +267,12 @@ const RideDetailsScreen = ({ route, navigation }) => {
           <Icon name="time-outline" size={18} color="#666" />
           <Text style={styles.infoText}>{formatTime(ride.date)}</Text>
         </View>
-        {!ride.isInCity && ride.duration != null && (
+        {/* {!ride.isInCity && ride.duration != null && (
           <View style={styles.infoRow}>
             <FontAwesome5 name="clock" size={16} color="#666" />
             <Text style={styles.infoText}>Duration: {ride.duration} hour{ride.duration > 1 ? 's' : ''}</Text>
           </View>
-        )}
+        )} */}
       </View>
 
       {/* Route Information */}
@@ -343,7 +360,7 @@ const RideDetailsScreen = ({ route, navigation }) => {
             <View style={styles.vehicleDetails}>
               <Text style={styles.vehicleName}>{ride?.vehicle?.name}</Text>
               <Text style={styles.vehicleType}>{ride?.vehicle?.type}</Text>
-              <Text style={styles.vehicleSpecs}>Plan: {ride?.duration} hour • {ride?.distance} km</Text>
+              {/* <Text style={styles.vehicleSpecs}>Plan: {ride?.duration} hour • {ride?.distance} km</Text> */}
             </View>
           )}
         </View>
@@ -413,7 +430,27 @@ const RideDetailsScreen = ({ route, navigation }) => {
 
       {/* Action Buttons */}
   
+     <Modal
+  visible={imageModalVisible}
+  transparent={true}
+  animationType="fade"
+  onRequestClose={() => setImageModalVisible(false)}
+>
+  <View style={styles.modalContainer}>
+    <TouchableOpacity
+      style={styles.closeBtn}
+      onPress={() => setImageModalVisible(false)}
+    >
+      <Icon name="close" size={30} color="#fff" />
+    </TouchableOpacity>
 
+    <Image
+      source={{ uri: selectedImage }}
+      style={styles.fullImage}
+      resizeMode="contain"
+    />
+  </View>
+</Modal>
       {/* Help Text */}
       <View style={styles.helpContainer}>
         <Icon name="information-circle-outline" size={16} color="#999" />
@@ -829,6 +866,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     lineHeight: 18,
+  },
+    meterImage: { width: 120, height: 90, borderRadius: 10, marginRight: 10 },
+      modalContainer: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.95)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fullImage: {
+    width: "100%",
+    height: "85%",
+  },
+  closeBtn: {
+    position: "absolute",
+    top: 50,
+    right: 20,
+    zIndex: 10,
   },
 });
 

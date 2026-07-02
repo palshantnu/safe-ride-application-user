@@ -667,22 +667,34 @@ const OnSpotBookings = ({ navigation }) => {
                 : parseFloat(selectedBooking?.balance_amount || 0).toFixed(2)}
             </Text>
 
-            <Text style={styles.paymentModeTitle}>Select Payment Mode</Text>
+            <Text style={styles.paymentModeTitle}>Pay Balance</Text>
             
             <View style={styles.paymentModeContainer}>
               <TouchableOpacity
                 style={[
                   styles.paymentModeOption,
-                  paymentMode === 'ONLINE' && styles.paymentModeSelected
+                  paymentMode === 'ONLINE' && styles.paymentModeSelected,
+                  { flexDirection: 'column', paddingVertical: 8 }
                 ]}
                 onPress={() => setPaymentMode('ONLINE')}
               >
-                <Icon name="card-outline" size={20} color={paymentMode === 'ONLINE' ? '#fff' : '#FF1493'} />
                 <Text style={[
                   styles.paymentModeText,
-                  paymentMode === 'ONLINE' && styles.paymentModeTextSelected
+                  paymentMode === 'ONLINE' && styles.paymentModeTextSelected,
+                  { fontSize: 13, fontWeight: '700' }
                 ]}>
-                  Online
+                  Pay to Sigi
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 10,
+                    color: paymentMode === 'ONLINE' ? '#fff' : '#FF1493',
+                    opacity: 0.8,
+                    marginTop: 2,
+                    fontWeight: '500'
+                  }}
+                >
+                  only Online
                 </Text>
               </TouchableOpacity>
 
@@ -690,16 +702,28 @@ const OnSpotBookings = ({ navigation }) => {
                 <TouchableOpacity
                   style={[
                     styles.paymentModeOption,
-                    paymentMode === 'CASH' && styles.paymentModeSelected
+                    paymentMode === 'CASH' && styles.paymentModeSelected,
+                    { flexDirection: 'column', paddingVertical: 8 }
                   ]}
                   onPress={() => setPaymentMode('CASH')}
                 >
-                  <FontAwesome5 name="money-bill" size={18} color={paymentMode === 'CASH' ? '#fff' : '#FF1493'} />
                   <Text style={[
                     styles.paymentModeText,
-                    paymentMode === 'CASH' && styles.paymentModeTextSelected
+                    paymentMode === 'CASH' && styles.paymentModeTextSelected,
+                    { fontSize: 13, fontWeight: '700' }
                   ]}>
-                    Cash
+                    Pay to Captain
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      color: paymentMode === 'CASH' ? '#fff' : '#FF1493',
+                      opacity: 0.8,
+                      marginTop: 2,
+                      fontWeight: '500'
+                    }}
+                  >
+                    Cash/Online
                   </Text>
                 </TouchableOpacity>
               )}
