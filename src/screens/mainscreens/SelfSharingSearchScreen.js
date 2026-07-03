@@ -729,7 +729,7 @@ const SelfSharingSearchScreen = ({ navigation, route }) => {
   const fetchCities = async () => {
     setCitiesLoading(true);
     try {
-      const response = await axiosinstance.get('cities');
+      const response = await axios.get(`${API_BASE_URL}/api/cities`);
       console.log('Fetch Cities Response:', response.data);
       if (response.data?.status && response.data?.data) {
         setCities(response.data.data);
@@ -895,30 +895,40 @@ console.log('Search Trips Response:', res);
           {/* From City */}
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>From City</Text>
-            <TouchableOpacity
-              style={styles.input}
-              onPress={() => {
-                setCityType('from');
-                setShowCityModal(true);
+            <Dropdown
+              style={[styles.dropdown, fromDropdownFocus && styles.dropdownFocused]}
+              placeholderStyle={styles.placeholderStyle}
+              selectedTextStyle={styles.selectedTextStyle}
+              inputSearchStyle={styles.inputSearchStyle}
+              iconStyle={styles.iconStyle}
+              data={getDropdownCities()}
+              search
+              maxHeight={300}
+              labelField="label"
+              valueField="value"
+              placeholder="Select from city"
+              searchPlaceholder="Search cities..."
+              value={fromCityId}
+              onFocus={() => setFromDropdownFocus(true)}
+              onBlur={() => setFromDropdownFocus(false)}
+              onChange={item => {
+                const selectedCity = cities.find(city => city.id === item.value);
+                if (selectedCity) {
+                  setFromCity(selectedCity.name);
+                  setFromCityId(selectedCity.id);
+                }
+                setFromDropdownFocus(false);
               }}
-            >
-              <Icon name="map-pin" size={18} color="#FF1493" style={styles.dropdownIcon} />
-              <Text style={[styles.inputText, fromCity ? styles.inputTextSelected : styles.inputTextPlaceholder]}>
-                {fromCity || 'Select from city'}
-              </Text>
-              {fromCity ? (
-                <TouchableOpacity
-                  onPress={() => {
-                    setFromCity('');
-                    setFromCityId(null);
-                  }}
-                >
-                  <Icon name="x" size={18} color="#666" />
-                </TouchableOpacity>
-              ) : (
-                <Icon name="chevron-down" size={18} color="#999" />
+              renderLeftIcon={() => (
+                <Icon name="map-pin" size={18} color="#FF1493" style={styles.dropdownIcon} />
               )}
-            </TouchableOpacity>
+              renderItem={renderDropdownItem}
+              activeColor="#FFF0F5"
+              selectedTextProps={{ numberOfLines: 1 }}
+              showsVerticalScrollIndicator={true}
+              keyboardAvoiding={true}
+              statusBarIsTranslucent={true}
+            />
           </View>
 
           {/* Swap Button */}
@@ -932,30 +942,40 @@ console.log('Search Trips Response:', res);
           {/* To City */}
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>To City</Text>
-            <TouchableOpacity
-              style={styles.input}
-              onPress={() => {
-                setCityType('to');
-                setShowCityModal(true);
+            <Dropdown
+              style={[styles.dropdown, toDropdownFocus && styles.dropdownFocused]}
+              placeholderStyle={styles.placeholderStyle}
+              selectedTextStyle={styles.selectedTextStyle}
+              inputSearchStyle={styles.inputSearchStyle}
+              iconStyle={styles.iconStyle}
+              data={getDropdownCities()}
+              search
+              maxHeight={300}
+              labelField="label"
+              valueField="value"
+              placeholder="Select to city"
+              searchPlaceholder="Search cities..."
+              value={toCityId}
+              onFocus={() => setToDropdownFocus(true)}
+              onBlur={() => setToDropdownFocus(false)}
+              onChange={item => {
+                const selectedCity = cities.find(city => city.id === item.value);
+                if (selectedCity) {
+                  setToCity(selectedCity.name);
+                  setToCityId(selectedCity.id);
+                }
+                setToDropdownFocus(false);
               }}
-            >
-              <Icon name="map-pin" size={18} color="#FF1493" style={styles.dropdownIcon} />
-              <Text style={[styles.inputText, toCity ? styles.inputTextSelected : styles.inputTextPlaceholder]}>
-                {toCity || 'Select to city'}
-              </Text>
-              {toCity ? (
-                <TouchableOpacity
-                  onPress={() => {
-                    setToCity('');
-                    setToCityId(null);
-                  }}
-                >
-                  <Icon name="x" size={18} color="#666" />
-                </TouchableOpacity>
-              ) : (
-                <Icon name="chevron-down" size={18} color="#999" />
+              renderLeftIcon={() => (
+                <Icon name="map-pin" size={18} color="#FF1493" style={styles.dropdownIcon} />
               )}
-            </TouchableOpacity>
+              renderItem={renderDropdownItem}
+              activeColor="#FFF0F5"
+              selectedTextProps={{ numberOfLines: 1 }}
+              showsVerticalScrollIndicator={true}
+              keyboardAvoiding={true}
+              statusBarIsTranslucent={true}
+            />
           </View>
 
           {/* Date */}

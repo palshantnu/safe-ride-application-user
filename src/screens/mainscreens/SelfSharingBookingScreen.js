@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
+  TextInput,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Feather';
@@ -20,8 +21,24 @@ import { CREATE_SELF_SHARING_BOOKING } from '../../redux/actions/action-creator'
 const SelfSharingBookingScreen = ({ navigation, route }) => {
   const { trip, fromCity, toCity, date, service_title, serviceType } = route.params;
   const [selectedSeats, setSelectedSeats] = useState(1);
+  const [passengers, setPassengers] = useState([{ name: '', age: '' }]);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  const handleSelectSeats = (seats) => {
+    setSelectedSeats(seats);
+    setPassengers((prev) => {
+      const next = [...prev];
+      if (next.length < seats) {
+        while (next.length < seats) {
+          next.push({ name: '', age: '' });
+        }
+      } else if (next.length > seats) {
+        next.splice(seats);
+      }
+      return next;
+    });
+  };
 
   const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
@@ -68,6 +85,25 @@ const SelfSharingBookingScreen = ({ navigation, route }) => {
 
     setIsLoading(true);
     try {
+      // Validate passenger details
+      for (let i = 0; i < passengers.length; i++) {
+        if (!passengers[i].name.trim()) {
+          Alert.alert('Error', `Please enter name for Passenger ${i + 1}`);
+          setIsLoading(false);
+          return;
+        }
+        if (!passengers[i].age.trim()) {
+          Alert.alert('Error', `Please enter age for Passenger ${i + 1}`);
+          setIsLoading(false);
+          return;
+        }
+        if (isNaN(passengers[i].age) || parseInt(passengers[i].age) <= 0) {
+          Alert.alert('Error', `Please enter a valid age for Passenger ${i + 1}`);
+          setIsLoading(false);
+          return;
+        }
+      }
+
       const totalTokenFare = parseFloat(trip.token_fare) * selectedSeats;
 
       // Run Razorpay payment
@@ -86,6 +122,10 @@ const SelfSharingBookingScreen = ({ navigation, route }) => {
         trip_id: trip.trip_id,
         seats: selectedSeats,
         transaction_id: transactionId,
+        passengers: passengers.map(p => ({
+          name: p.name.trim(),
+          age: parseInt(p.age.trim(), 10)
+        }))
       };
 
       const res = await dispatch(CREATE_SELF_SHARING_BOOKING(bookingPayload, serviceType));
@@ -102,7 +142,7 @@ const SelfSharingBookingScreen = ({ navigation, route }) => {
           },
           {
             text: 'Go Home',
-            onPress: () => navigation.navigate('Home'),
+            onPress: () => navigation.goBack(),
           },
         ]);
       } else {
@@ -248,7 +288,7 @@ const SelfSharingBookingScreen = ({ navigation, route }) => {
                   styles.seatOption,
                   selectedSeats === seat && styles.seatOptionSelected,
                 ]}
-                onPress={() => setSelectedSeats(seat)}
+                onPress={() => handleSelectSeats(seat)}
               >
                 <FontAwesome5
                   name="chair"
@@ -266,6 +306,42 @@ const SelfSharingBookingScreen = ({ navigation, route }) => {
               </TouchableOpacity>
             ))}
           </View>
+        </View>
+
+        {/* Passenger Details */}
+        <View style={styles.passengersCard}>
+          <Text style={styles.sectionTitle}>Passenger Details</Text>
+          {passengers.map((passenger, idx) => (
+            <View key={idx} style={styles.passengerFormGroup}>
+              <Text style={styles.passengerLabel}>Passenger {idx + 1}</Text>
+              <View style={styles.passengerInputRow}>
+                <TextInput
+                  style={styles.passengerNameInput}
+                  placeholder="Enter Name"
+                  placeholderTextColor="#999"
+                  value={passenger.name}
+                  onChangeText={(val) => {
+                    const next = [...passengers];
+                    next[idx] = { ...next[idx], name: val };
+                    setPassengers(next);
+                  }}
+                />
+                <TextInput
+                  style={styles.passengerAgeInput}
+                  placeholder="Age"
+                  placeholderTextColor="#999"
+                  keyboardType="numeric"
+                  maxLength={3}
+                  value={passenger.age}
+                  onChangeText={(val) => {
+                    const next = [...passengers];
+                    next[idx] = { ...next[idx], age: val };
+                    setPassengers(next);
+                  }}
+                />
+              </View>
+            </View>
+          ))}
         </View>
 
         {/* Pricing Breakdown */}
@@ -605,13 +681,76 @@ const styles = StyleSheet.create({
   savingsLabel: {
     fontSize: 11,
     color: '#2E7D32',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   savingsValue: {
     fontSize: 12,
-    fontWeight: '600',
     color: '#2E7D32',
-    marginTop: 2,
+    fontWeight: 'bold',
+  },
+  bookingButton: {
+    marginTop: 10,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 30,
+  },
+  gradientButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 15,
+    gap: 8,
+  },
+  bookingButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  passengersCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  passengerFormGroup: {
+    marginBottom: 12,
+  },
+  passengerLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 6,
+  },
+  passengerInputRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  passengerNameInput: {
+    flex: 2,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 14,
+    color: '#333',
+    backgroundColor: '#FAF9F6',
+  },
+  passengerAgeInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 14,
+    color: '#333',
+    backgroundColor: '#FAF9F6',
   },
   infoBox: {
     flexDirection: 'row',

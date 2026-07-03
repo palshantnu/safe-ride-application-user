@@ -534,7 +534,7 @@ console.log('parcel_booking_id', item?.parcel_booking_id,'user_status', user_sta
               </TouchableOpacity>
             )}
 
-            {showPayBalance && (
+            {showPayBalance && status =='pickup_reached' && (
               <View>
                 <Text style={styles.payBalanceTitle}>Pay Balance (₹{balanceAmount.toFixed(2)})</Text>
                 <View style={styles.payOptionsRow}>
@@ -605,7 +605,8 @@ console.log('parcel_booking_id', item?.parcel_booking_id,'user_status', user_sta
           </View>
         )}
 
-{(!isDelivered && !isCancelled) && <>
+{(!isDelivered && !isCancelled) && (status =='pickup_reached' || status == 'picked_up') && item.balance_paid == 1 && 
+<>
 {item?.pickup_otp_verified == 0 ? (
           <View style={styles.remarksContainer}>
             

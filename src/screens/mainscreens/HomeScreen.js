@@ -1058,6 +1058,8 @@ console.log('vehicleTitle',vehicleTitle)
     const otp = showPickupOtp ? booking?.pickup_otp : booking?.delivery_otp;
     const otpLabel = showPickupOtp ? 'Pickup OTP' : 'Delivery OTP';
 
+    console.log('renderActiveParcelBooking booking:', booking);
+
     return (
       <Animated.View
         key={booking?.parcel_booking_id || booking?.id || index}
@@ -1116,13 +1118,13 @@ console.log('vehicleTitle',vehicleTitle)
         ) : null}
 
         <View style={styles.currentDetailsGrid}>
-          <View style={styles.currentDetailItem}>
+          {/* <View style={styles.currentDetailItem}>
             <Icon name="info" size={15} color="#666" />
             <View style={styles.currentDetailTextWrap}>
               <Text style={styles.currentDetailLabel}>Booking Status</Text>
               <Text style={styles.currentDetailValue}>{getStatusText(status)}</Text>
             </View>
-          </View>
+          </View> */}
           <View style={styles.currentDetailItem}>
             <FontAwesome5 name="people-carry" size={13} color="#666" />
             <View style={styles.currentDetailTextWrap}>
@@ -1130,13 +1132,7 @@ console.log('vehicleTitle',vehicleTitle)
               <Text style={styles.currentDetailValue}>{booking?.loading_unloading || '-'}</Text>
             </View>
           </View>
-          <View style={styles.currentDetailItem}>
-            <Icon name="message-square" size={15} color="#666" />
-            <View style={styles.currentDetailTextWrap}>
-              <Text numberOfLines={1} style={styles.currentDetailLabel}>Remarks</Text>
-              <Text style={styles.currentDetailValue}>{booking?.remarks || '-'}</Text>
-            </View>
-          </View>
+         
           <View style={styles.currentDetailItem}>
             <FontAwesome5 name="weight-hanging" size={13} color="#666" />
             <View style={styles.currentDetailTextWrap}>
@@ -1146,9 +1142,16 @@ console.log('vehicleTitle',vehicleTitle)
               </Text>
             </View>
           </View>
+       <View style={{...styles.currentDetailItem,width:'100%'}}>
+            <Icon name="message-square" size={15} color="#666" />
+            <View style={styles.currentDetailTextWrap}>
+              <Text numberOfLines={1} style={styles.currentDetailLabel}>Remarks</Text>
+              <Text style={styles.currentDetailValue}>{booking?.remarks || '-'}</Text>
+            </View>
+          </View>
         </View>
 
-        {otp ? (
+        {otp && (status =='pickup_reached' || status == 'picked_up') && booking.balance_paid == 1 ? (
           <View style={styles.otpHorizontalContainer}>
             <Text style={styles.otpHorizontalLabel}>Share OTP to captain</Text>
             <Text style={styles.otpHorizontalValue}>{otp}</Text>
@@ -2987,7 +2990,7 @@ alignSelf: 'flex-start',
     marginBottom: 12,
   },
   scheduleDateText: {
-    fontSize: 13,
+    fontSize: 18,
     color: '#FF1493',
     fontWeight: '600',
   },

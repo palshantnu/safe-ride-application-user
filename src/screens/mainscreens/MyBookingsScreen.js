@@ -61,16 +61,23 @@ const MyBookingsScreen = ({ navigation, route }) => {
         setIsLoadingMore(true);
       }
 
-      const res = await dispatch(GET_SELF_SHARING_BOOKINGS(serviceType, page, 10));
+const res = await dispatch(GET_SELF_SHARING_BOOKINGS(serviceType, page, 10));
+console.log('GET_SELF_SHARING_BOOKINGS Response:', res);
 
-      if (res?.status && res?.data && Array.isArray(res.data)) {
-        if (loadMore) {
-          // Append new data to existing bookings
-          setBookings((prevBookings) => [...prevBookings, ...res.data]);
-        } else {
-          // Replace with fresh data on initial load or refresh
-          setBookings(res.data);
-        }
+if (res?.status && Array.isArray(res.data)) {
+  // Remove cancelled bookings
+  const filteredBookings = res.data.filter(
+    (booking) => booking.status !== "CANCELLED"
+  );
+
+  if (loadMore) {
+    setBookings((prevBookings) => [
+      ...prevBookings,
+      ...filteredBookings,
+    ]);
+  } else {
+    setBookings(filteredBookings);
+  }
 
         // Set hasMore based on whether we got less than the limit
         setHasMore(res.data.length === 10);
