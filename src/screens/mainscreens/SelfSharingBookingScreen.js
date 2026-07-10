@@ -21,7 +21,7 @@ import { CREATE_SELF_SHARING_BOOKING } from '../../redux/actions/action-creator'
 const SelfSharingBookingScreen = ({ navigation, route }) => {
   const { trip, fromCity, toCity, date, service_title, serviceType } = route.params;
   const [selectedSeats, setSelectedSeats] = useState(1);
-  const [passengers, setPassengers] = useState([{ name: '', age: '' }]);
+  const [passengers, setPassengers] = useState([{ name: '', age: '', gender: '' }]);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -31,7 +31,7 @@ const SelfSharingBookingScreen = ({ navigation, route }) => {
       const next = [...prev];
       if (next.length < seats) {
         while (next.length < seats) {
-          next.push({ name: '', age: '' });
+          next.push({ name: '', age: '', gender: '' });
         }
       } else if (next.length > seats) {
         next.splice(seats);
@@ -102,6 +102,11 @@ const SelfSharingBookingScreen = ({ navigation, route }) => {
           setIsLoading(false);
           return;
         }
+        if (!passengers[i].gender) {
+          Alert.alert('Error', `Please select gender for Passenger ${i + 1}`);
+          setIsLoading(false);
+          return;
+        }
       }
 
       const totalTokenFare = parseFloat(trip.token_fare) * selectedSeats;
@@ -124,7 +129,8 @@ const SelfSharingBookingScreen = ({ navigation, route }) => {
         transaction_id: transactionId,
         passengers: passengers.map(p => ({
           name: p.name.trim(),
-          age: parseInt(p.age.trim(), 10)
+          age: parseInt(p.age.trim(), 10),
+          gender: p.gender
         }))
       };
 
@@ -339,6 +345,35 @@ const SelfSharingBookingScreen = ({ navigation, route }) => {
                     setPassengers(next);
                   }}
                 />
+              </View>
+              {/* Gender selector */}
+              <View style={styles.genderContainer}>
+                <Text style={styles.genderLabel}>Gender:</Text>
+                <View style={styles.genderOptions}>
+                  {['Male', 'Female', 'Other'].map((g) => (
+                    <TouchableOpacity
+                      key={g}
+                      style={[
+                        styles.genderOption,
+                        passenger.gender === g && styles.genderOptionSelected,
+                      ]}
+                      onPress={() => {
+                        const next = [...passengers];
+                        next[idx] = { ...next[idx], gender: g };
+                        setPassengers(next);
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.genderOptionText,
+                          passenger.gender === g && styles.genderOptionTextSelected,
+                        ]}
+                      >
+                        {g}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
             </View>
           ))}
@@ -751,6 +786,45 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#333',
     backgroundColor: '#FAF9F6',
+  },
+  genderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  genderLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#666',
+    marginRight: 8,
+  },
+  genderOptions: {
+    flexDirection: 'row',
+    gap: 6,
+    flex: 1,
+  },
+  genderOption: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 6,
+    paddingVertical: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+  },
+  genderOptionSelected: {
+    borderColor: '#FF1493',
+    backgroundColor: '#FFF0F5',
+  },
+  genderOptionText: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
+  },
+  genderOptionTextSelected: {
+    color: '#FF1493',
+    fontWeight: '600',
   },
   infoBox: {
     flexDirection: 'row',

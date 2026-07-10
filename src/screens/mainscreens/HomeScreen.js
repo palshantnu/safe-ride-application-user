@@ -2195,7 +2195,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   userName: {
-    fontSize: 28,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#fff',
     marginTop: 4,

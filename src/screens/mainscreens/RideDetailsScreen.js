@@ -184,7 +184,10 @@ const openImage = (image) => {
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <FontAwesome5 name="camera" size={18} color="#FF1493" />
-          <Text style={styles.cardTitle}>Meter Images ({ride.meter_images.length})</Text>
+          <View style={{ flex: 1, marginLeft: 10 }}>
+            <Text style={styles.cardTitle}>Meter Images ({ride.meter_images.length})</Text>
+            <Text style={styles.expiryNotice}>Image will be expired after 15 days.</Text>
+          </View>
         </View>
         <View style={styles.imageList}>
           {ride.meter_images.map((image, index) => (
@@ -512,6 +515,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#333',
+  },
+  expiryNotice: {
+    fontSize: 11,
+    color: '#FF3B30',
+    marginTop: 2,
+    fontWeight: '500',
   },
   infoRow: {
     flexDirection: 'row',
