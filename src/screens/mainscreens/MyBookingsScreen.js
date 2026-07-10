@@ -44,6 +44,7 @@ const MyBookingsScreen = ({ navigation, route }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [activeTab, setActiveTab] = useState('active'); // 'active' or 'history'
 
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
@@ -65,18 +66,13 @@ const res = await dispatch(GET_SELF_SHARING_BOOKINGS(serviceType, page, 10));
 console.log('GET_SELF_SHARING_BOOKINGS Response:', res);
 
 if (res?.status && Array.isArray(res.data)) {
-  // Remove cancelled bookings
-  const filteredBookings = res.data.filter(
-    (booking) => booking.status !== "CANCELLED"
-  );
-
   if (loadMore) {
     setBookings((prevBookings) => [
       ...prevBookings,
-      ...filteredBookings,
+      ...res.data,
     ]);
   } else {
-    setBookings(filteredBookings);
+    setBookings(res.data);
   }
 
         // Set hasMore based on whether we got less than the limit
@@ -250,7 +246,14 @@ if (res?.status && Array.isArray(res.data)) {
     const canCancel = !['COMPLETED', 'CANCELLED','STARTED'].includes(status);
 
     return (
-      <View style={styles.bookingCard}>
+      <TouchableOpacity
+        style={styles.bookingCard}
+        onPress={() => navigation.navigate('SelfSharingBookingDetails', {
+          booking: item,
+          onRefresh: () => fetchBookings(1, false),
+        })}
+        activeOpacity={0.85}
+      >
         {/* Header */}
         <View style={styles.bookingCardHeader}>
           <View>
@@ -370,23 +373,35 @@ if (res?.status && Array.isArray(res.data)) {
             )}
           </TouchableOpacity>
         )}
-      </View>
+
+        {/* View Details Indicator */}
+        <View style={styles.detailsIndicator}>
+          <Text style={styles.detailsIndicatorText}>View Booking Details</Text>
+          <Icon name="chevron-right" size={14} color="#FF1493" />
+        </View>
+      </TouchableOpacity>
     );
   };
 
   const emptyListComponent = () => (
     <View style={styles.emptyContainer}>
       <FontAwesome5 name="inbox" size={48} color="#DDD" />
-      <Text style={styles.emptyTitle}>No Active Bookings</Text>
-      <Text style={styles.emptyText}>
-        You don't have any active bookings yet. Start booking now!
+      <Text style={styles.emptyTitle}>
+        {activeTab === 'active' ? 'No Active Bookings' : 'No Booking History'}
       </Text>
-      <TouchableOpacity
-        style={styles.searchButton}
-        onPress={() => navigation.goBack()}
-      >
-        <Text style={styles.searchButtonText}>Find Trips</Text>
-      </TouchableOpacity>
+      <Text style={styles.emptyText}>
+        {activeTab === 'active'
+          ? "You don't have any active bookings yet. Start booking now!"
+          : "You don't have any past bookings yet."}
+      </Text>
+      {activeTab === 'active' && (
+        <TouchableOpacity
+          style={styles.searchButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.searchButtonText}>Find Trips</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 
@@ -447,9 +462,35 @@ if (res?.status && Array.isArray(res.data)) {
         </TouchableOpacity>
       </LinearGradient>
 
+      {/* Tabs */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'active' && styles.activeTabButton]}
+          onPress={() => setActiveTab('active')}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.tabText, activeTab === 'active' && styles.activeTabText]}>
+            Active Bookings
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'history' && styles.activeTabButton]}
+          onPress={() => setActiveTab('history')}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.tabText, activeTab === 'history' && styles.activeTabText]}>
+            Booking History
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Bookings List */}
       <FlatList
-        data={bookings}
+        data={bookings.filter((booking) => {
+          const isPast = ['COMPLETED', 'CANCELLED'].includes(booking.status) || 
+                         ['COMPLETED', 'CANCELLED'].includes(booking.trip_status);
+          return activeTab === 'active' ? !isPast : isPast;
+        })}
         renderItem={renderBookingCard}
         keyExtractor={(item, index) => index.toString()}
         contentContainerStyle={styles.listContent}
@@ -825,7 +866,7 @@ const styles = StyleSheet.create({
     color: '#999',
     fontWeight: '500',
   },
-  driverName: {
+  driverInfoName: {
     fontSize: 12,
     fontWeight: '600',
     color: '#FF1493',
@@ -1029,6 +1070,48 @@ const styles = StyleSheet.create({
     height: 100,
     textAlignVertical: 'top',
     color: '#333',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    gap: 8,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 20,
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  activeTabButton: {
+    backgroundColor: '#FF1493',
+  },
+  tabText: {
+    fontSize: 13,
+    color: '#666',
+    fontWeight: '600',
+  },
+  activeTabText: {
+    color: '#fff',
+  },
+  detailsIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    gap: 4,
+  },
+  detailsIndicatorText: {
+    fontSize: 12,
+    color: '#FF1493',
+    fontWeight: '600',
   },
 });
 

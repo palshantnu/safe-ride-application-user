@@ -1274,13 +1274,12 @@ console.log('vehicleTitle',vehicleTitle)
 
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => navigation.navigate('MyBookings', {
-            service_title: 'Self Sharing',
-            serviceType: 'selfsharing',
+          onPress={() => navigation.navigate('SelfSharingBookingDetails', {
+            booking,
           })}
         >
           <Icon name="arrow-right-circle" size={16} color="#fff" />
-          <Text style={styles.actionButtonText}>Continue Booking</Text>
+          <Text style={styles.actionButtonText}>View Booking Details</Text>
         </TouchableOpacity>
       </Animated.View>
     );

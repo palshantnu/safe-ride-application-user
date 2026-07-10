@@ -25,6 +25,7 @@ import SelfSharingSearchScreen from '../screens/mainscreens/SelfSharingSearchScr
 import AvailableTripsScreen from '../screens/mainscreens/AvailableTripsScreen';
 import SelfSharingBookingScreen from '../screens/mainscreens/SelfSharingBookingScreen';
 import MyBookingsScreen from '../screens/mainscreens/MyBookingsScreen';
+import SelfSharingBookingDetailsScreen from '../screens/mainscreens/SelfSharingBookingDetailsScreen';
 import ParcelMyParcelsHistoryScreen from '../screens/mainscreens/ParcelMyParcelsHistoryScreen';
 import ParcelVehicleSelectionScreen from '../screens/mainscreens/ParcelVehicleSelectionScreen';
 import OnSpotBookings from '../screens/mainscreens/OnSpotBookings';
@@ -233,6 +234,11 @@ const AppNavigator = () => {
             <Stack.Screen
               name="MyBookings"
               component={MyBookingsScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="SelfSharingBookingDetails"
+              component={SelfSharingBookingDetailsScreen}
               options={{ headerShown: false }}
             />
             <Stack.Screen
