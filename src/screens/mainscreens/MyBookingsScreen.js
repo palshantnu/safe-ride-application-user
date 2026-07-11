@@ -14,6 +14,7 @@ import {
   Dimensions,
   Linking,
   TextInput,
+  BackHandler,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Feather';
@@ -52,6 +53,20 @@ const MyBookingsScreen = ({ navigation, route }) => {
   useEffect(() => {
     fetchBookings(1, false);
   }, []);
+
+  useEffect(() => {
+    const backAction = () => {
+      navigation.replace('Main', { screen: 'Home' });
+      return true;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, [navigation]);
 
   const fetchBookings = async (page = 1, loadMore = false) => {
     try {
@@ -397,7 +412,7 @@ if (res?.status && Array.isArray(res.data)) {
       {activeTab === 'active' && (
         <TouchableOpacity
           style={styles.searchButton}
-          onPress={() => navigation.goBack()}
+          onPress={() => navigation.replace('Main', { screen: 'Home' })}
         >
           <Text style={styles.searchButtonText}>Find Trips</Text>
         </TouchableOpacity>
@@ -417,7 +432,7 @@ if (res?.status && Array.isArray(res.data)) {
         >
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => navigation.goBack()}
+            onPress={() => navigation.replace('Main', { screen: 'Home' })}
           >
             <Icon name="chevron-left" size={28} color="#fff" />
           </TouchableOpacity>
@@ -444,7 +459,7 @@ if (res?.status && Array.isArray(res.data)) {
       >
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.goBack()}
+          onPress={() => navigation.replace('Main', { screen: 'Home' })}
         >
           <Icon name="chevron-left" size={28} color="#fff" />
         </TouchableOpacity>

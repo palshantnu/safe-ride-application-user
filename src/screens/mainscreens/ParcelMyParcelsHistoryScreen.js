@@ -11,6 +11,7 @@ import {
   Alert,
   Modal,
   TextInput,
+  Image,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
@@ -43,6 +44,14 @@ const ParcelMyParcelsHistoryScreen = ({ navigation }) => {
   const { user } = useSelector((state) => state.auth);
 
   const [parcels, setParcels] = useState([]);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imageModalVisible, setImageModalVisible] = useState(false);
+
+  const openImage = (image) => {
+    setSelectedImage(image);
+    setImageModalVisible(true);
+  };
+
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -68,7 +77,7 @@ const ParcelMyParcelsHistoryScreen = ({ navigation }) => {
 
       const nextPage = loadMore ? page : 1;
       const res = await dispatch(GET_MY_PARCELS(nextPage, limit));
-
+console.log('GET_MY_PARCELS response', res);
       const list = Array.isArray(res?.data) ? res.data : [];
       const pagination = res?.pagination || {};
       const totalPages = pagination?.total_pages;
@@ -625,6 +634,35 @@ console.log('parcel_booking_id', item?.parcel_booking_id,'user_status', user_sta
             <Text style={styles.remarksText}>{item.remarks}</Text>
           </View>
         ) : null}
+
+        {(item?.pickup_image || item?.delivery_image) ? (
+          <View style={styles.imagesRowContainer}>
+            {item?.pickup_image ? (
+              <View style={styles.imageCol}>
+                <Text style={styles.imageColLabel}>Pickup Image</Text>
+                <TouchableOpacity onPress={() => openImage(`https://sigiride.com/uploads/parcel_images/${item.pickup_image}`)}>
+                  <Image
+                    source={{ uri: `https://sigiride.com/uploads/parcel_images/${item.pickup_image}` }}
+                    style={styles.parcelThumbnail}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
+              </View>
+            ) : null}
+            {item?.delivery_image ? (
+              <View style={styles.imageCol}>
+                <Text style={styles.imageColLabel}>Delivery Image</Text>
+                <TouchableOpacity onPress={() => openImage(`https://sigiride.com/uploads/parcel_images/${item.delivery_image}`)}>
+                  <Image
+                    source={{ uri: `https://sigiride.com/uploads/parcel_images/${item.delivery_image}` }}
+                    style={styles.parcelThumbnail}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
       </View>
     );
   };
@@ -706,6 +744,28 @@ console.log('parcel_booking_id', item?.parcel_booking_id,'user_status', user_sta
               </TouchableOpacity>
             </View>
           </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={imageModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setImageModalVisible(false)}
+      >
+        <View style={styles.imageViewerContainer}>
+          <TouchableOpacity
+            style={styles.imageViewerCloseBtn}
+            onPress={() => setImageModalVisible(false)}
+          >
+            <Icon name="close" size={30} color="#fff" />
+          </TouchableOpacity>
+
+          <Image
+            source={{ uri: selectedImage }}
+            style={styles.imageViewerFullImage}
+            resizeMode="contain"
+          />
         </View>
       </Modal>
     </View>
@@ -1071,6 +1131,44 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '500',
+  },
+  imagesRowContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 12,
+  },
+  imageCol: {
+    flex: 1,
+  },
+  imageColLabel: {
+    fontSize: 10,
+    color: '#999',
+    marginBottom: 4,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  parcelThumbnail: {
+    width: '100%',
+    height: 100,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  imageViewerContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageViewerFullImage: {
+    width: '100%',
+    height: '85%',
+  },
+  imageViewerCloseBtn: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 10,
   },
 });
 

@@ -417,21 +417,23 @@ const OnSpotBookings = ({ navigation }) => {
 
           {/* Price Breakdown */}
           <View style={styles.priceContainer}>
-            <View style={styles.priceItem}>
-              <Text style={styles.priceLabel}>Total</Text>
-              <Text style={styles.totalPrice}>₹{parseFloat(booking.total_amount).toFixed(2)}</Text>
+           <View style={styles.priceItem}>
+              <Text style={styles.priceLabel}>Balance</Text>
+              <Text style={styles.balanceAmount}>₹{parseFloat(booking.balance_amount).toFixed(2)}</Text>
             </View>
             <View style={styles.priceItem}>
               <Text style={styles.priceLabel}>Token Paid</Text>
               <Text style={styles.tokenPaid}>₹{parseFloat(booking.token_amount).toFixed(2)}</Text>
             </View>
-            <View style={styles.priceItem}>
-              <Text style={styles.priceLabel}>Balance</Text>
-              <Text style={styles.balanceAmount}>₹{parseFloat(booking.balance_amount).toFixed(2)}</Text>
+             <View style={styles.priceItem}>
+              <Text style={styles.priceLabel}>Total</Text>
+              <Text style={styles.totalPrice}>₹{parseFloat(booking.total_amount).toFixed(2)}</Text>
             </View>
+            
           </View>
 
           {/* Driver Info (if assigned) */}
+         {isCurrent &&  <>
           {booking.driver_id && (
             <View style={styles.driverCard}>
               <View style={styles.driverRow}>
@@ -468,6 +470,8 @@ const OnSpotBookings = ({ navigation }) => {
               </View>
             </View>
           )}
+          </>}
+         
 
           {/* OTP Display (if token paid and not completed) */}
           {OTP && status == 'ARRIVED' && booking.balance_paid == 1 && (

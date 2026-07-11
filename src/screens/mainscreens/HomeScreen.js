@@ -1811,7 +1811,7 @@ console.log('vehicleTitle',vehicleTitle)
 
             <TextInput
               style={styles.input}
-              placeholder="Pickup location - Optional"
+              placeholder="Paste Google Maps location link (Optional)"
               placeholderTextColor={'#000'}
               value={pickupLocation}
               onChangeText={setPickupLocation}
