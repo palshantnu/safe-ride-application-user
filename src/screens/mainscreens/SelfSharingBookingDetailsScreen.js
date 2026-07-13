@@ -28,6 +28,8 @@ const { width } = Dimensions.get('window');
 
 const SelfSharingBookingDetailsScreen = ({ route, navigation }) => {
   const { booking: initialBooking, onRefresh } = route.params;
+
+  console.log('SelfSharingBookingDetailsScreen initialBooking:', initialBooking);
   const [booking, setBooking] = useState(initialBooking);
   const [isCancelling, setIsCancelling] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -346,7 +348,7 @@ const SelfSharingBookingDetailsScreen = ({ route, navigation }) => {
         </View>
 
         {/* Creator Info Card */}
-        <View style={styles.card}>
+        {(booking.status != 'COMPLETED' && booking.status != 'CANCELLED') && <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Icon name="user" size={18} color="#FF1493" />
             <Text style={styles.cardTitle}>Captain Details</Text>
@@ -366,7 +368,7 @@ const SelfSharingBookingDetailsScreen = ({ route, navigation }) => {
               </TouchableOpacity>
             ) : null}
           </View>
-        </View>
+        </View>}
 
         {/* Trip ID / Booking ID details */}
         <View style={styles.metaContainer}>

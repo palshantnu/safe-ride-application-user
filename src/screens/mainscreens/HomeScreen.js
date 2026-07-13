@@ -34,7 +34,8 @@ import {
   GET_CURRENT_PARCEL_BOOKINGS,
   GET_SELF_SHARING_BOOKINGS,
   GET_ONSPOT_BOOKINGS,
-  GET_USER_POPUPS
+  GET_USER_POPUPS,
+  SUBMIT_DRIVER_RATING
 } from '../../redux/actions/action-creator';
 import { IMAGE_URL } from '../../axios/axiosinstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -63,7 +64,7 @@ const isTerminalStatus = (status) => {
   const value = toStatusKey(status);
   return (
     value.includes('CANCEL') ||
-    value.includes('COMPLETE') ||
+    // value.includes('COMPLETE') ||
     value.includes('DELIVERED')
   );
 };
@@ -106,6 +107,12 @@ const HomeScreen = ({ navigation }) => {
   const [cancelReason, setCancelReason] = useState('');
   const [selectedBookingForCancel, setSelectedBookingForCancel] = useState(null);
 
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [review, setReview] = useState('');
+  const [ratingBooking, setRatingBooking] = useState(null);
+  const [shownRatings, setShownRatings] = useState([]);
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(100)).current;
   const bannerRef = useRef(null);
@@ -131,6 +138,16 @@ const HomeScreen = ({ navigation }) => {
 
     return () => clearInterval(interval);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const completedRide = activeBookings.find(
+      (b) => b.__bookingType === BOOKING_TYPE.RIDE && b.status === 'COMPLETED'
+    );
+    if (completedRide && !shownRatings.includes(completedRide.booking_id)) {
+      setShownRatings((prev) => [...prev, completedRide.booking_id]);
+      handleOpenRatingModal(completedRide);
+    }
+  }, [activeBookings, shownRatings]);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -582,6 +599,37 @@ const secureProfileImage = profileImageUri.replace('http://', 'https://');
     }
   };
 
+  const handleOpenRatingModal = (booking) => {
+    setRatingBooking(booking);
+    setRating(5);
+    setReview('');
+    setShowRatingModal(true);
+  };
+
+  const submitRating = async () => {
+    setIsLoading(true);
+    try {
+      const res = await dispatch(SUBMIT_DRIVER_RATING({
+        booking_id: ratingBooking?.booking_id,
+        rating: rating,
+        review: review.trim()
+      }));
+console.log('Rating submission response:', res);
+      if (res?.status) {
+        setShowRatingModal(false);
+        Alert.alert('Success', 'Thank you for your rating & feedback!');
+        await fetchCurrentRide();
+      } else {
+        Alert.alert('Error', res?.message || 'Failed to submit rating');
+      }
+    } catch (error) {
+      console.log('Error submitting rating:', error.response?.data.message);
+      Alert.alert('Error',error.response?.data.message || 'Something went wrong');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const getStatusColor = (status) => {
     const key = toStatusKey(status);
     const colors = {
@@ -808,9 +856,18 @@ const secureProfileImage = profileImageUri.replace('http://', 'https://');
 
       case 'COMPLETED':
         return (
-          <View style={styles.rideInfoContainer}>
-            <FontAwesome5 name="check-circle" size={20} color="#4CAF50" />
-            <Text style={styles.rideInfoText}>Ride completed successfully!</Text>
+          <View style={styles.actionButtonsColumn}>
+            <View style={[styles.rideInfoContainer, { marginBottom: 10 }]}>
+              <FontAwesome5 name="check-circle" size={20} color="#4CAF50" />
+              <Text style={styles.rideInfoText}>Ride completed successfully!</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => handleOpenRatingModal(booking)}
+            >
+              <FontAwesome5 name="star" size={16} color="#fff" solid />
+              <Text style={styles.actionButtonText}>Rate & Review Driver</Text>
+            </TouchableOpacity>
           </View>
         );
 
@@ -2145,6 +2202,62 @@ console.log('vehicleTitle',vehicleTitle)
           </View>
         </View>
       </Modal>
+
+      <Modal visible={showRatingModal} transparent animationType="slide">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Rate Your Driver</Text>
+            <Text style={styles.modalSubtitle}>How was your trip with {ratingBooking?.driver_name || 'Captain'}?</Text>
+
+            <View style={styles.starsRow}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <TouchableOpacity
+                  key={star}
+                  onPress={() => setRating(star)}
+                  style={styles.starTouch}
+                >
+                  <FontAwesome5
+                    name="star"
+                    size={32}
+                    color={star <= rating ? '#FFD700' : '#E0E0E0'}
+                    solid={star <= rating}
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TextInput
+              style={[styles.input, { height: 80, textAlignVertical: 'top', marginTop: 20 }]}
+              placeholder="Write a review (optional)"
+              placeholderTextColor="#999"
+              value={review}
+              onChangeText={setReview}
+              multiline
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.cancelBtn]}
+                onPress={() => setShowRatingModal(false)}
+              >
+                <Text style={styles.cancelBtnText}>Later</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.submitBtn]}
+                onPress={submitRating}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.submitBtnText}>Submit</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -3115,12 +3228,21 @@ popupButton: {
     paddingVertical: 14,
 },
 
-popupButtonText: {
+  popupButtonText: {
     color: '#fff',
     textAlign: 'center',
     fontWeight: '700',
     fontSize: 16,
-},
+  },
+  starsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+    marginVertical: 15,
+  },
+  starTouch: {
+    padding: 6,
+  },
 });
 
 export default HomeScreen;

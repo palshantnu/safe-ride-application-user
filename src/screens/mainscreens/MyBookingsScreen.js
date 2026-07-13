@@ -500,12 +500,19 @@ if (res?.status && Array.isArray(res.data)) {
       </View>
 
       {/* Bookings List */}
+
+      {console.log('Rendering FlatList with bookings:', bookings)}
       <FlatList
-        data={bookings.filter((booking) => {
-          const isPast = ['COMPLETED', 'CANCELLED'].includes(booking.status) || 
-                         ['COMPLETED', 'CANCELLED'].includes(booking.trip_status);
-          return activeTab === 'active' ? !isPast : isPast;
-        })}
+      data={bookings.filter((booking) => {
+  const isPast =
+    (
+      ['COMPLETED', 'CANCELLED'].includes(booking.status) ||
+      ['COMPLETED', 'CANCELLED'].includes(booking.trip_status)
+    ) &&
+    booking.rating_status === 'FINISHED';
+
+  return activeTab === 'active' ? !isPast : isPast;
+})}
         renderItem={renderBookingCard}
         keyExtractor={(item, index) => index.toString()}
         contentContainerStyle={styles.listContent}

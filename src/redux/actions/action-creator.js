@@ -750,3 +750,17 @@ export const CREATE_ONSPOT_BOOKING =
       throw error;
     }
   };
+
+// SUBMIT DRIVER RATING
+export const SUBMIT_DRIVER_RATING = (ratingData) => (dispatch) => {
+  console.log('SUBMIT_DRIVER_RATING ratingData:', ratingData);
+  return axiosinstance.post('/user/driver/rating', ratingData)
+    .then((response) => {
+      return response.data;
+    })
+    .catch((error) => {
+      console.log('SUBMIT_DRIVER_RATING Error:', error.response?.data || error.message
+      );
+      throw error;
+    });
+};
