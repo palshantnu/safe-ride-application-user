@@ -764,3 +764,16 @@ export const SUBMIT_DRIVER_RATING = (ratingData) => (dispatch) => {
       throw error;
     });
 };
+
+// SUBMIT SELF SHARING RATING
+export const SUBMIT_SELF_SHARING_RATING = (ratingData) => (dispatch) => {
+  console.log('SUBMIT_SELF_SHARING_RATING ratingData:', ratingData);
+  return axiosinstance.post('/selfsharing/booking/rating', ratingData)
+    .then((response) => {
+      return response.data;
+    })
+    .catch((error) => {
+      console.log('SUBMIT_SELF_SHARING_RATING Error:', error.response?.data || error.message);
+      throw error;
+    });
+};

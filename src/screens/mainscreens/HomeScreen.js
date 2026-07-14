@@ -35,7 +35,8 @@ import {
   GET_SELF_SHARING_BOOKINGS,
   GET_ONSPOT_BOOKINGS,
   GET_USER_POPUPS,
-  SUBMIT_DRIVER_RATING
+  SUBMIT_DRIVER_RATING,
+  SUBMIT_SELF_SHARING_RATING
 } from '../../redux/actions/action-creator';
 import { IMAGE_URL } from '../../axios/axiosinstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -60,11 +61,14 @@ const formatStatusLabel = (status) => {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
-const isTerminalStatus = (status) => {
+const isTerminalStatus = (status, ratingStatus, bookingType) => {
   const value = toStatusKey(status);
+  if (bookingType?.toLowerCase() === 'selfsharing' && value.includes('COMPLETE')) {
+    return ratingStatus === 'FINISHED';
+  }
   return (
     value.includes('CANCEL') ||
-    // value.includes('COMPLETE') ||
+    value.includes('COMPLETE') ||
     value.includes('DELIVERED')
   );
 };
@@ -140,12 +144,17 @@ const HomeScreen = ({ navigation }) => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    const completedRide = activeBookings.find(
-      (b) => b.__bookingType === BOOKING_TYPE.RIDE && b.status === 'COMPLETED'
+    const completedBooking = activeBookings.find(
+      (b) =>
+        (b.__bookingType === BOOKING_TYPE.RIDE && b.status === 'COMPLETED') ||
+        (b.__bookingType === BOOKING_TYPE.SELF_SHARING && (b.trip_status === 'COMPLETED' || b.status === 'COMPLETED'))
     );
-    if (completedRide && !shownRatings.includes(completedRide.booking_id)) {
-      setShownRatings((prev) => [...prev, completedRide.booking_id]);
-      handleOpenRatingModal(completedRide);
+    if (completedBooking) {
+      const bKey = completedBooking.booking_id || completedBooking.id;
+      if (bKey && !shownRatings.includes(bKey)) {
+        setShownRatings((prev) => [...prev, bKey]);
+        handleOpenRatingModal(completedBooking);
+      }
     }
   }, [activeBookings, shownRatings]);
 
@@ -207,19 +216,21 @@ const closePopup = async () => {
     return null;
   };
 
-  const isActiveBooking = (booking) => {
+  const isActiveBooking = (booking, bookingType) => {
     const statuses = [
       booking?.status,
       booking?.trip_status,
       booking?.user_status,
       booking?.driver_status,
     ];
-    return !statuses.some(isTerminalStatus);
+    return !statuses.some((status) =>
+      isTerminalStatus(status, booking?.rating_status, bookingType)
+    );
   };
 
   const mapCurrentBookings = (response, bookingType) => {
     return asArray(response?.data)
-      .filter(isActiveBooking)
+      .filter((booking) => isActiveBooking(booking, bookingType))
       .map((booking) => ({
         ...booking,
         __bookingType: bookingType,
@@ -609,12 +620,21 @@ const secureProfileImage = profileImageUri.replace('http://', 'https://');
   const submitRating = async () => {
     setIsLoading(true);
     try {
-      const res = await dispatch(SUBMIT_DRIVER_RATING({
-        booking_id: ratingBooking?.booking_id,
-        rating: rating,
-        review: review.trim()
-      }));
-console.log('Rating submission response:', res);
+      let res;
+      if (ratingBooking?.__bookingType === BOOKING_TYPE.SELF_SHARING) {
+        res = await dispatch(SUBMIT_SELF_SHARING_RATING({
+          booking_id: ratingBooking?.booking_id,
+          rating: rating,
+          review: review.trim()
+        }));
+      } else {
+        res = await dispatch(SUBMIT_DRIVER_RATING({
+          booking_id: ratingBooking?.booking_id,
+          rating: rating,
+          review: review.trim()
+        }));
+      }
+      console.log('Rating submission response:', res);
       if (res?.status) {
         setShowRatingModal(false);
         Alert.alert('Success', 'Thank you for your rating & feedback!');
@@ -623,8 +643,8 @@ console.log('Rating submission response:', res);
         Alert.alert('Error', res?.message || 'Failed to submit rating');
       }
     } catch (error) {
-      console.log('Error submitting rating:', error.response?.data.message);
-      Alert.alert('Error',error.response?.data.message || 'Something went wrong');
+      console.log('Error submitting rating:', error.response?.data?.message || error.message);
+      Alert.alert('Error', error.response?.data?.message || 'Something went wrong');
     } finally {
       setIsLoading(false);
     }
@@ -1329,15 +1349,36 @@ console.log('vehicleTitle',vehicleTitle)
           </View>
         ) : null}
 
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => navigation.navigate('SelfSharingBookingDetails', {
-            booking,
-          })}
-        >
-          <Icon name="arrow-right-circle" size={16} color="#fff" />
-          <Text style={styles.actionButtonText}>View Booking Details</Text>
-        </TouchableOpacity>
+        {toStatusKey(status) === 'COMPLETED' ? (
+          <View style={styles.actionButtonsColumn}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => handleOpenRatingModal(booking)}
+            >
+              <FontAwesome5 name="star" size={16} color="#fff" solid />
+              <Text style={styles.actionButtonText}>Rate & Review Driver</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, { marginTop: 10 }]}
+              onPress={() => navigation.navigate('SelfSharingBookingDetails', {
+                booking,
+              })}
+            >
+              <Icon name="arrow-right-circle" size={16} color="#fff" />
+              <Text style={styles.actionButtonText}>View Booking Details</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => navigation.navigate('SelfSharingBookingDetails', {
+              booking,
+            })}
+          >
+            <Icon name="arrow-right-circle" size={16} color="#fff" />
+            <Text style={styles.actionButtonText}>View Booking Details</Text>
+          </TouchableOpacity>
+        )}
       </Animated.View>
     );
   };
