@@ -777,3 +777,29 @@ export const SUBMIT_SELF_SHARING_RATING = (ratingData) => (dispatch) => {
       throw error;
     });
 };
+
+// SUBMIT ONSPOT RATING
+export const SUBMIT_ONSPOT_RATING = (ratingData) => (dispatch) => {
+  console.log('SUBMIT_ONSPOT_RATING ratingData:', ratingData);
+  return axiosinstance.post('/onspot/rating', ratingData)
+    .then((response) => {
+      return response.data;
+    })
+    .catch((error) => {
+      console.log('SUBMIT_ONSPOT_RATING Error:', error.response?.data || error.message);
+      throw error;
+    });
+};
+
+// SUBMIT PARCEL RATING
+export const SUBMIT_PARCEL_RATING = (ratingData) => (dispatch) => {
+  console.log('SUBMIT_PARCEL_RATING ratingData:', ratingData);
+  return axiosinstance.post('/parcel/rating', ratingData)
+    .then((response) => {
+      return response.data;
+    })
+    .catch((error) => {
+      console.log('SUBMIT_PARCEL_RATING Error:', error.response?.data || error.message);
+      throw error;
+    });
+};

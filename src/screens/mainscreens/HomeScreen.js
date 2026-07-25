@@ -36,7 +36,9 @@ import {
   GET_ONSPOT_BOOKINGS,
   GET_USER_POPUPS,
   SUBMIT_DRIVER_RATING,
-  SUBMIT_SELF_SHARING_RATING
+  SUBMIT_SELF_SHARING_RATING,
+  SUBMIT_ONSPOT_RATING,
+  SUBMIT_PARCEL_RATING
 } from '../../redux/actions/action-creator';
 import { IMAGE_URL } from '../../axios/axiosinstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -63,7 +65,11 @@ const formatStatusLabel = (status) => {
 
 const isTerminalStatus = (status, ratingStatus, bookingType) => {
   const value = toStatusKey(status);
-  if (bookingType?.toLowerCase() === 'selfsharing' && value.includes('COMPLETE')) {
+  const isCompletedOrDelivered = value.includes('COMPLETE') || value.includes('DELIVER');
+  if (
+    (bookingType?.toLowerCase() === 'selfsharing' || bookingType?.toLowerCase() === 'onspot' || bookingType?.toLowerCase() === 'parcel') &&
+    isCompletedOrDelivered
+  ) {
     return ratingStatus === 'FINISHED';
   }
   return (
@@ -147,10 +153,12 @@ const HomeScreen = ({ navigation }) => {
     const completedBooking = activeBookings.find(
       (b) =>
         (b.__bookingType === BOOKING_TYPE.RIDE && b.status === 'COMPLETED') ||
-        (b.__bookingType === BOOKING_TYPE.SELF_SHARING && (b.trip_status === 'COMPLETED' || b.status === 'COMPLETED'))
+        (b.__bookingType === BOOKING_TYPE.SELF_SHARING && (b.trip_status === 'COMPLETED' || b.status === 'COMPLETED')) ||
+        (b.__bookingType === BOOKING_TYPE.ON_SPOT && b.status === 'COMPLETED') ||
+        (b.__bookingType === BOOKING_TYPE.PARCEL && (b.status === 'COMPLETED' || b.status === 'DELIVERED'))
     );
     if (completedBooking) {
-      const bKey = completedBooking.booking_id || completedBooking.id;
+      const bKey = completedBooking.booking_id || completedBooking.parcel_booking_id || completedBooking.id || completedBooking.booking_no;
       if (bKey && !shownRatings.includes(bKey)) {
         setShownRatings((prev) => [...prev, bKey]);
         handleOpenRatingModal(completedBooking);
@@ -624,6 +632,18 @@ const secureProfileImage = profileImageUri.replace('http://', 'https://');
       if (ratingBooking?.__bookingType === BOOKING_TYPE.SELF_SHARING) {
         res = await dispatch(SUBMIT_SELF_SHARING_RATING({
           booking_id: ratingBooking?.booking_id,
+          rating: rating,
+          review: review.trim()
+        }));
+      } else if (ratingBooking?.__bookingType === BOOKING_TYPE.ON_SPOT) {
+        res = await dispatch(SUBMIT_ONSPOT_RATING({
+          booking_no: ratingBooking?.booking_no || ratingBooking?.booking_id || ratingBooking?.id,
+          rating: rating,
+          review: review.trim()
+        }));
+      } else if (ratingBooking?.__bookingType === BOOKING_TYPE.PARCEL) {
+        res = await dispatch(SUBMIT_PARCEL_RATING({
+          parcel_booking_id: ratingBooking?.parcel_booking_id || ratingBooking?.booking_id || ratingBooking?.id,
           rating: rating,
           review: review.trim()
         }));
@@ -1530,13 +1550,32 @@ console.log('vehicleTitle',vehicleTitle)
           </View>
         ) : null}
 
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => navigation.navigate('OnSpotBookings')}
-        >
-          <Icon name="arrow-right-circle" size={16} color="#fff" />
-          <Text style={styles.actionButtonText}>Continue Booking</Text>
-        </TouchableOpacity>
+        {statusKey === 'COMPLETED' ? (
+          <View style={styles.actionButtonsColumn}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => handleOpenRatingModal(booking)}
+            >
+              <FontAwesome5 name="star" size={16} color="#fff" solid />
+              <Text style={styles.actionButtonText}>Rate & Review Driver</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, { marginTop: 10 }]}
+              onPress={() => navigation.navigate('OnSpotBookings')}
+            >
+              <Icon name="arrow-right-circle" size={16} color="#fff" />
+              <Text style={styles.actionButtonText}>Continue Booking</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => navigation.navigate('OnSpotBookings')}
+          >
+            <Icon name="arrow-right-circle" size={16} color="#fff" />
+            <Text style={styles.actionButtonText}>Continue Booking</Text>
+          </TouchableOpacity>
+        )}
       </Animated.View>
     );
   };
