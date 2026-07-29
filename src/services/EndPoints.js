@@ -14,5 +14,6 @@ const EndPoints = {
   userWithdrawalHistory: 'user/withdrawal-history',
   userWithdrawalRequest: 'user/withdrawal-request',
   createOnSpotBooking: '/onspot/booking/create',
+  userNotifications:'notifications/user'
 };
 export default EndPoints;

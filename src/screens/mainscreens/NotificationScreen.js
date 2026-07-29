@@ -1,344 +1,333 @@
-import React, { useState, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
+  Image,
   RefreshControl,
-  StatusBar,
-  SafeAreaView,
+  ActivityIndicator,
+  Linking,
+  Alert,
 } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { GET_NOTIFICATIONS } from '../../redux/actions/action-creator';
 import Icon from 'react-native-vector-icons/Feather';
-import CurvedHeader from '../../components/CurvedHeader';
-import SimpleToast from 'react-native-simple-toast';
-
-const MOCK_NOTIFICATIONS = [
-  {
-    id: '1',
-    title: 'Ride Completed Successfully',
-    message: 'Your ride to Airport Terminal 2 is completed. Thank you for riding with SafeRide!',
-    time: '2 hours ago',
-    type: 'ride',
-    read: false,
-  },
-  {
-    id: '2',
-    title: 'Wallet Recharge Successful',
-    message: 'We received your payment of ₹500. Your new wallet balance has been updated.',
-    time: '5 hours ago',
-    type: 'payment',
-    read: false,
-  },
-  {
-    id: '3',
-    title: '50% Off On Your Next Ride!',
-    message: 'Use promo code SAFERIDE50 to get up to 50% discount on your next city ride. Valid till Sunday.',
-    time: '1 day ago',
-    type: 'promo',
-    read: true,
-  },
-  {
-    id: '4',
-    title: 'Account Verification Complete',
-    message: 'Your profile details and identity verification have been approved successfully.',
-    time: '3 days ago',
-    type: 'system',
-    read: true,
-  },
-];
+import LinearGradient from 'react-native-linear-gradient';
 
 const NotificationScreen = ({ navigation }) => {
-  const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
+  const dispatch = useDispatch();
+  const { notifications, notificationsLoading } = useSelector((state) => state.common);
   const [refreshing, setRefreshing] = useState(false);
 
-  const onRefresh = useCallback(() => {
+  const fetchNotifications = useCallback(async () => {
+    try {
+      await dispatch(GET_NOTIFICATIONS());
+    } catch (e) {
+      console.log('fetchNotifications error:', e);
+    }
+  }, [dispatch]);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
+
+  const handleRefresh = async () => {
     setRefreshing(true);
-    setTimeout(() => {
-      // Keep state as is, just simulate refresh
-      setRefreshing(false);
-      SimpleToast.show('Notifications updated');
-    }, 1000);
-  }, []);
-
-  const handleMarkAllRead = () => {
-    setNotifications((prev) =>
-      prev.map((n) => ({ ...n, read: true }))
-    );
-    SimpleToast.show('All marked as read');
+    await fetchNotifications();
+    setRefreshing(false);
   };
 
-  const handleClearAll = () => {
-    setNotifications([]);
-    SimpleToast.show('All notifications cleared');
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} min ago`;
+    if (diffHours < 24) return `${diffHours} hour ago`;
+    if (diffDays < 7) return `${diffDays} day ago`;
+
+    return date.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
   };
 
-  const handleMarkAsRead = (id) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
-  };
-
-  const handleDeleteNotification = (id) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-    SimpleToast.show('Notification deleted');
-  };
-
-  const getNotificationConfig = (type) => {
-    switch (type) {
-      case 'ride':
-        return { icon: 'map-pin', color: '#FF1493', bgColor: '#FFF0F5' };
-      case 'payment':
-        return { icon: 'dollar-sign', color: '#4CD964', bgColor: '#E8F9ED' };
-      case 'promo':
-        return { icon: 'gift', color: '#FF9500', bgColor: '#FFF9E6' };
-      case 'system':
-      default:
-        return { icon: 'info', color: '#007AFF', bgColor: '#E6F2FF' };
+  const handleImagePress = (imageUrl) => {
+    if (imageUrl) {
+      Linking.openURL(imageUrl).catch(() =>
+        Alert.alert('Error', 'Could not open image URL')
+      );
     }
   };
 
-  const renderItem = ({ item }) => {
-    const config = getNotificationConfig(item.type);
-
-    return (
-      <TouchableOpacity
-        style={[styles.card, !item.read && styles.unreadCard]}
-        onPress={() => handleMarkAsRead(item.id)}
-        activeOpacity={0.9}
-      >
-        <View style={[styles.iconWrapper, { backgroundColor: config.bgColor }]}>
-          <Icon name={config.icon} size={20} color={config.color} />
+  const renderNotificationItem = ({ item }) => (
+    <View style={styles.notificationCard}>
+      <View style={styles.notificationHeader}>
+        <View style={styles.notificationIconContainer}>
+          <Icon name="bell" size={18} color="#FF1493" />
         </View>
-
-        <View style={styles.contentContainer}>
-          <View style={styles.cardHeader}>
-            <Text style={[styles.title, !item.read && styles.unreadTitle]} numberOfLines={1}>
-              {item.title}
+        <View style={styles.notificationTitleContainer}>
+          <Text style={styles.notificationTitle}>{item.title}</Text>
+          <Text style={styles.notificationDate}>
+            {formatDate(item.created_at)}
+          </Text>
+        </View>
+        {item.audience && (
+          <View style={[
+            styles.audienceBadge,
+            item.audience === 'both'
+              ? { backgroundColor: '#4CAF50' }
+              : { backgroundColor: '#2196F3' }
+          ]}>
+            <Text style={styles.audienceBadgeText}>
+              {item.audience === 'both' ? 'All' : item.audience}
             </Text>
-            {!item.read && <View style={styles.unreadDot} />}
           </View>
-          <Text style={styles.message}>{item.message}</Text>
-          <Text style={styles.time}>{item.time}</Text>
-        </View>
+        )}
+      </View>
 
+      <Text style={styles.notificationMessage}>{item.message}</Text>
+
+      {item.image_url && (
         <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => handleDeleteNotification(item.id)}
-          activeOpacity={0.7}
+          onPress={() => handleImagePress(item.image_url)}
+          style={styles.imageContainer}
         >
-          <Icon name="trash-2" size={16} color="#8E8E93" />
+          <Image
+            source={{ uri: item.image_url }}
+            style={styles.notificationImage}
+            resizeMode="cover"
+          />
+          <View style={styles.imageOverlay}>
+            <Icon name="external-link" size={16} color="#fff" />
+            <Text style={styles.imageOverlayText}>View Image</Text>
+          </View>
         </TouchableOpacity>
+      )}
+    </View>
+  );
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyContainer}>
+      <Icon name="bell-off" size={60} color="#ccc" />
+      <Text style={styles.emptyTitle}>No Notifications</Text>
+      <Text style={styles.emptyText}>
+        You're all caught up! New notifications will appear here.
+      </Text>
+    </View>
+  );
+
+  const renderHeader = () => (
+    <LinearGradient
+      colors={['#ff7f50', '#ff7f50', '#e20f7a']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.header}
+    >
+      <TouchableOpacity
+        style={styles.backBtn}
+        onPress={() => navigation.goBack()}
+      >
+        <Icon name="chevron-left" size={28} color="#fff" />
       </TouchableOpacity>
+      <Text style={styles.headerTitle}>Notifications</Text>
+      <View style={styles.headerRight} />
+    </LinearGradient>
+  );
+
+  if (notificationsLoading && notifications?.length === 0) {
+    return (
+      <View style={styles.container}>
+        {renderHeader()}
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FF1493" />
+          <Text style={styles.loadingText}>Loading notifications...</Text>
+        </View>
+      </View>
     );
-  };
+  }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#ff7f50" />
-      <CurvedHeader
-        title="Notifications"
-        showBack={true}
-        navigation={navigation}
-        right={
-          notifications.length > 0 ? (
-            <TouchableOpacity style={styles.headerRight} onPress={handleClearAll}>
-              <Icon name="trash" size={20} color="#fff" />
-            </TouchableOpacity>
-          ) : null
-        }
-      />
-
-      {notifications.length > 0 && (
-        <View style={styles.actionRow}>
-          <Text style={styles.countText}>{notifications.filter(n => !n.read).length} Unread</Text>
-          <TouchableOpacity style={styles.actionButton} onPress={handleMarkAllRead}>
-            <Icon name="check-square" size={14} color="#FF1493" />
-            <Text style={styles.actionText}>Mark all as read</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
+    <View style={styles.container}>
+      {renderHeader()}
       <FlatList
         data={notifications}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
+        keyExtractor={(item) => item.id?.toString()}
+        renderItem={renderNotificationItem}
+        ListEmptyComponent={renderEmptyState}
+        contentContainerStyle={
+          notifications?.length === 0 ? styles.emptyListContainer : styles.listContainer
+        }
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#FF1493']} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={['#FF1493']}
+            tintColor="#FF1493"
+          />
         }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <View style={styles.emptyIconWrapper}>
-              <Icon name="bell-off" size={60} color="#FF1493" />
-            </View>
-            <Text style={styles.emptyTitle}>All caught up!</Text>
-            <Text style={styles.emptySubtitle}>
-              You don't have any notifications right now.
-            </Text>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => navigation.goBack()}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.backButtonText}>Go to Home</Text>
-            </TouchableOpacity>
-          </View>
-        }
+        showsVerticalScrollIndicator={false}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#f5f5f5',
   },
-  headerRight: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  header: {
+    height: 60,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    elevation: 4,
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
   },
-  actionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 15,
-    paddingBottom: 5,
-  },
-  countText: {
-    fontSize: 14,
+  headerTitle: {
+    fontSize: 20,
     fontWeight: '600',
-    color: '#8E8E93',
+    color: '#FFFFFF',
   },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+  backBtn: {
+    position: 'absolute',
+    left: 16,
   },
-  actionText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FF1493',
+  headerRight: {
+    position: 'absolute',
+    right: 16,
   },
   listContainer: {
     padding: 16,
-    flexGrow: 1,
+    paddingBottom: 30,
   },
-  card: {
-    flexDirection: 'row',
+  emptyListContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 16,
+  },
+  notificationCard: {
     backgroundColor: '#fff',
-    borderRadius: 16,
+    borderRadius: 15,
     padding: 16,
     marginBottom: 12,
-    alignItems: 'center',
+    elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#F2F2F7',
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
   },
-  unreadCard: {
-    backgroundColor: '#FFF9FB',
-    borderColor: '#FFE0EB',
-  },
-  iconWrapper: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  contentContainer: {
-    flex: 1,
-  },
-  cardHeader: {
+  notificationHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingRight: 10,
+    marginBottom: 10,
   },
-  title: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#1C1C1E',
+  notificationIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFF0F7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
   },
-  unreadTitle: {
+  notificationTitleContainer: {
+    flex: 1,
+  },
+  notificationTitle: {
+    fontSize: 16,
     fontWeight: '700',
+    color: '#222',
   },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#FF1493',
+  notificationDate: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 2,
   },
-  message: {
-    fontSize: 13,
-    color: '#3A3A3C',
-    marginTop: 4,
-    lineHeight: 18,
+  audienceBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginLeft: 8,
   },
-  time: {
+  audienceBadgeText: {
+    color: '#fff',
     fontSize: 11,
-    color: '#8E8E93',
-    marginTop: 6,
-    fontWeight: '500',
+    fontWeight: '600',
+    textTransform: 'capitalize',
   },
-  deleteButton: {
-    padding: 8,
+  notificationMessage: {
+    fontSize: 14,
+    color: '#555',
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  imageContainer: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginTop: 8,
+    position: 'relative',
+  },
+  notificationImage: {
+    width: '100%',
+    height: 160,
+    borderRadius: 12,
+  },
+  imageOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    gap: 6,
+  },
+  imageOverlayText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
   },
   emptyContainer: {
+    alignItems: 'center',
+    padding: 30,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 15,
+    marginBottom: 10,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 80,
   },
-  emptyIconWrapper: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#FFF0F5',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1C1C1E',
-    marginBottom: 8,
-  },
-  emptySubtitle: {
+  loadingText: {
     fontSize: 14,
-    color: '#8E8E93',
-    textAlign: 'center',
-    paddingHorizontal: 40,
-    lineHeight: 20,
-    marginBottom: 28,
-  },
-  backButton: {
-    backgroundColor: '#FF1493',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 24,
-    shadowColor: '#FF1493',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  backButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
+    color: '#666',
+    marginTop: 12,
   },
 });
 
 export default NotificationScreen;
+

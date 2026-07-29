@@ -1,6 +1,10 @@
 // src/redux/reducers/common.js
 import * as types from '../actions/action-types';
-
+import {
+  GET_NOTIFICATIONS_REQUEST,
+  GET_NOTIFICATIONS_SUCCESS,
+  GET_NOTIFICATIONS_FAILURE,
+} from '../actions/action-types';
 const initialState = {
   appLanguage: 'en',
   theme: 'light',
@@ -14,6 +18,8 @@ const initialState = {
   bookingLoading: false,
   bookingError: null,
   bookingSuccess: false,
+    notifications: [],
+  notificationsLoading: false,
 };
 
 export const common = (state = initialState, action) => {
@@ -130,7 +136,22 @@ case types.CREATE_ONSPOT_BOOKING_SUCCESS:
     bookingSuccess: true,
     bookingError: null,
   };
-
+ case GET_NOTIFICATIONS_REQUEST:
+      return {
+        ...state,
+        notificationsLoading: true,
+      };
+    case GET_NOTIFICATIONS_SUCCESS:
+      return {
+        ...state,
+        notifications: action.payload?.data || [],
+        notificationsLoading: false,
+      };
+    case GET_NOTIFICATIONS_FAILURE:
+      return {
+        ...state,
+        notificationsLoading: false,
+      };
 case types.CREATE_ONSPOT_BOOKING_FAILURE:
   return {
     ...state,

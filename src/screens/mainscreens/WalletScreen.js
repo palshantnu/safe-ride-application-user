@@ -50,22 +50,31 @@
     const [withdrawalPage, setWithdrawalPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [hasMoreWithdrawals, setHasMoreWithdrawals] = useState(true);
+const normaliseResponse = (res) => {
+  const outer = res.data;
+  const inner = outer?.data ?? outer;
 
-    const normaliseResponse = (res) => {
-      const outer = res.data;
-      // outer may be { status, message, data: [...] } or { status, message, data: { result: [], balance, total } }
-      const inner = outer?.data ?? outer;
-      const list = Array.isArray(inner)
-        ? inner
-        : Array.isArray(inner?.result)
-        ? inner.result
-        : Array.isArray(inner?.data)
-        ? inner.data
-        : [];
-      const bal = inner?.balance ?? outer?.balance;
-      const total = inner?.total ?? list.length;
-      return { list, bal, total };
-    };
+  const list = Array.isArray(inner)
+    ? inner
+    : Array.isArray(inner?.result)
+    ? inner.result
+    : Array.isArray(inner?.data)
+    ? inner.data
+    : [];
+
+  const bal =
+    outer?.wallet_balance ??
+    inner?.wallet_balance ??
+    outer?.balance ??
+    inner?.balance;
+
+  const total =
+    outer?.pagination?.total ??
+    inner?.total ??
+    list.length;
+
+  return { list, bal, total };
+};
 
     const fetchHistory = useCallback(async (resetPage = true) => {
       if (resetPage) {
@@ -76,7 +85,7 @@
         const currentPage = resetPage ? 1 : page;
         const res = await getRechargeHistory(currentPage, LIMIT);
         const { list, bal } = normaliseResponse(res);
-  console.log('list',res)
+  console.log('list',bal)
         if (resetPage) {
           setTransactions(list);
         } else {
@@ -115,30 +124,37 @@
       }
     };
 
-    const fetchWithdrawalHistory = useCallback(async (resetPage = true) => {
-      if (resetPage) {
-        setWithdrawalHistoryLoading(true);
-        setWithdrawalPage(1);
-      }
-      try {
-        const currentPage = resetPage ? 1 : withdrawalPage;
-        const res = await getWithdrawalHistory(currentPage, LIMIT);
-        const { list } = normaliseResponse(res);
+ const fetchWithdrawalHistory = useCallback(async (resetPage = true) => {
+  if (resetPage) {
+    setWithdrawalHistoryLoading(true);
+    setWithdrawalPage(1);
+  }
 
-        if (resetPage) {
-          setWithdrawalHistory(list);
-        } else {
-          setWithdrawalHistory(prev => [...prev, ...list]);
-        }
+  try {
+    const currentPage = resetPage ? 1 : withdrawalPage;
 
-        setHasMoreWithdrawals(list.length === LIMIT);
-      } catch (err) {
-        console.log('Withdrawal history error:', err);
-      } finally {
-        setWithdrawalHistoryLoading(false);
-        setLoadingMore(false);
-      }
-    }, [withdrawalPage]);
+    const res = await getWithdrawalHistory(currentPage, LIMIT);
+
+    const { list, bal } = normaliseResponse(res);
+
+    if (resetPage) {
+      setWithdrawalHistory(list);
+    } else {
+      setWithdrawalHistory(prev => [...prev, ...list]);
+    }
+
+    if (bal !== undefined && bal !== null) {
+      setBalance(bal);
+    }
+
+    setHasMoreWithdrawals(list.length === LIMIT);
+  } catch (err) {
+    console.log(err);
+  } finally {
+    setWithdrawalHistoryLoading(false);
+    setLoadingMore(false);
+  }
+}, [withdrawalPage]);
 
     const loadMoreWithdrawals = async () => {
       if (loadingMore || !hasMoreWithdrawals) return;

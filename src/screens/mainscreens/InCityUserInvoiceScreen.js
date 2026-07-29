@@ -71,7 +71,8 @@ const InCityUserInvoiceScreen = ({ route, navigation }) => {
     const poll = setInterval(async () => {
       try {
         const res = await dispatch(GET_USER_CURRENT_BOOKING());
-        if (!res?.data || ['COMPLETED', 'CANCELLED'].includes(res.data.status)) {
+        console.log('Current booking status:', res?.data);
+        if (!res?.data || ['COMPLETED', 'CANCELLED'].includes(res.data[0].status)) {
           clearInterval(poll);
           navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
         }
@@ -188,7 +189,7 @@ const InCityUserInvoiceScreen = ({ route, navigation }) => {
               ) : (
                 <>
                   <MaterialIcon name="cash" size={22} color={WHITE} />
-                  <Text style={s.payBtnText}>I Paid (Cash)</Text>
+                  <Text style={s.payBtnText}>I Paid (Cash)  <MaterialIcon name="currency-inr" size={16} color={'#fff'} />{actualFare}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -246,7 +247,7 @@ const InCityUserInvoiceScreen = ({ route, navigation }) => {
             <View style={s.distChip}>
               <Icon name="map" size={13} color={BRAND} />
               <Text style={s.distText}>
-                Distance: <Text style={{ fontWeight: '700', color: TEXT }}>{actualDist} km</Text>
+                Distance: <Text style={{ fontWeight: '700', color: TEXT }}>{Math.ceil(actualDist)} km</Text>
               </Text>
             </View>
           ) : null}

@@ -74,7 +74,7 @@ const isTerminalStatus = (status, ratingStatus, bookingType) => {
   }
   return (
     value.includes('CANCEL') ||
-    value.includes('COMPLETE') ||
+    // value.includes('COMPLETE') ||
     value.includes('DELIVERED')
   );
 };
@@ -910,6 +910,22 @@ const secureProfileImage = profileImageUri.replace('http://', 'https://');
             </TouchableOpacity>
           </View>
         );
+      case 'DELIVERED':
+        return (
+          <View style={styles.actionButtonsColumn}>
+            <View style={[styles.rideInfoContainer, { marginBottom: 10 }]}>
+              <FontAwesome5 name="check-circle" size={20} color="#4CAF50" />
+              <Text style={styles.rideInfoText}>Ride completed successfully!</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => handleOpenRatingModal(booking)}
+            >
+              <FontAwesome5 name="star" size={16} color="#fff" solid />
+              <Text style={styles.actionButtonText}>Rate & Review Driver</Text>
+            </TouchableOpacity>
+          </View>
+        );
 
       case 'CANCELLED':
         return (
@@ -1254,15 +1270,30 @@ console.log('vehicleTitle',vehicleTitle)
             <Text style={styles.otpHorizontalValue}>{otp}</Text>
           </View>
         ) : null}
-
-        <TouchableOpacity
+{console.log('status',status)}
+  { status !== 'delivered' ?    <TouchableOpacity
           style={styles.actionButton}
           onPress={() => navigation.navigate('MyParcels')}
         >
           <Icon name="arrow-right-circle" size={16} color="#fff" />
           <Text style={styles.actionButtonText}>Continue Booking</Text>
-        </TouchableOpacity>
+        </TouchableOpacity>:
+        <View style={styles.actionButtonsColumn}>
+            <View style={[styles.rideInfoContainer, { marginBottom: 10 }]}>
+              <FontAwesome5 name="check-circle" size={20} color="#4CAF50" />
+              <Text style={styles.rideInfoText}>Ride completed successfully!</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => handleOpenRatingModal(booking)}
+            >
+              <FontAwesome5 name="star" size={16} color="#fff" solid />
+              <Text style={styles.actionButtonText}>Rate & Review Driver</Text>
+            </TouchableOpacity>
+          </View>}
+        
       </Animated.View>
+      
     );
   };
 
@@ -1499,8 +1530,8 @@ console.log('vehicleTitle',vehicleTitle)
             </View>
           </View>
         </View>
-
-        {booking?.driver_id ? (() => {
+{console.log('booking=======>',booking)}
+        {(booking?.driver_id && booking.token_paid) ? (() => {
          
           return (
             <View style={styles.driverCard}>

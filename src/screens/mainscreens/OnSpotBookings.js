@@ -433,7 +433,7 @@ const OnSpotBookings = ({ navigation }) => {
           </View>
 
           {/* Driver Info (if assigned) */}
-         {isCurrent &&  <>
+         {(isCurrent &&  booking.token_paid) &&  <>
           {booking.driver_id && (
             <View style={styles.driverCard}>
               <View style={styles.driverRow}>
@@ -505,7 +505,7 @@ const OnSpotBookings = ({ navigation }) => {
             </View>
           )}
         </View>
-
+{console.log('status===>',status)}
         {/* Action Buttons for Current Bookings */}
         {isCurrent && (
           <View style={styles.cardFooter}>
@@ -559,8 +559,19 @@ const OnSpotBookings = ({ navigation }) => {
                 <Text style={styles.inProgressText}>Service in progress...</Text>
               </View>
             )}
+            
           </View>
         )}
+        {status === 'PENDING' && (
+               <TouchableOpacity
+                  style={[styles.actionButton, styles.cancelButton]}
+                  onPress={() => handleCancelBooking(booking)}
+                  disabled={isLoading}
+                >
+                  <Icon name="close-outline" size={18} color="#fff" />
+                  <Text style={styles.actionButtonText}>Cancel</Text>
+                </TouchableOpacity>
+            )}
       </View>
     );
   };

@@ -40,16 +40,31 @@ const getVehicleIcon = (title = '') => {
   return 'truck';
 };
 
+// const haversineDistance = (lat1, lon1, lat2, lon2) => {
+//   const R = 6371;
+//   const dLat = ((lat2 - lat1) * Math.PI) / 180;
+//   const dLon = ((lon2 - lon1) * Math.PI) / 180;
+//   const a =
+//     Math.sin(dLat / 2) ** 2 +
+//     Math.cos((lat1 * Math.PI) / 180) *
+//       Math.cos((lat2 * Math.PI) / 180) *
+//       Math.sin(dLon / 2) ** 2;
+//   return parseFloat((R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(2));
+// };
 const haversineDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
+
   const a =
     Math.sin(dLat / 2) ** 2 +
     Math.cos((lat1 * Math.PI) / 180) *
       Math.cos((lat2 * Math.PI) / 180) *
       Math.sin(dLon / 2) ** 2;
-  return parseFloat((R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(2));
+
+  const distance = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return Math.ceil(distance);
 };
 
 const InCityScreen = ({ route, navigation }) => {
@@ -376,14 +391,47 @@ const InCityScreen = ({ route, navigation }) => {
     return haversineDistance(pickup.latitude, pickup.longitude, drop.latitude, drop.longitude);
   }, [pickup, drop]);
 
-  const calculateFare = (vehicle) => {
-    const fixed    = parseFloat(vehicle.fixed_charge || 0);
-    const minKm    = parseFloat(vehicle.fixed_charge_km || 1);
-    const perKm    = parseFloat(vehicle.charge_after_fixed_per_km || 0);
-    if (!tripDistance || tripDistance <= minKm) return fixed;
-    return fixed + (tripDistance - minKm) * perKm;
-  };
+  // const calculateFare = (vehicle) => {
 
+  //   console.log('vehicle', vehicle)
+  //   const fixed    = parseFloat(vehicle.fixed_charge || 0);
+  //   const minKm    = parseFloat(vehicle.fixed_charge_km || 1);
+  //   const perKm    = parseFloat(vehicle.charge_after_fixed_per_km || 0);
+  //   if (!tripDistance || tripDistance <= minKm) return fixed;
+  //   return fixed + (tripDistance - minKm) * perKm;
+  // };
+
+  const calculateFare = (vehicle) => {
+  console.log("vehicle", vehicle);
+
+  const fixed = parseFloat(vehicle.fixed_charge || 0);
+  const minKm = parseFloat(vehicle.fixed_charge_km || 1);
+  const perKm = parseFloat(vehicle.charge_after_fixed_per_km || 0);
+
+  // Base fare
+  let fare =
+    !tripDistance || tripDistance <= minKm
+      ? fixed
+      : fixed + (tripDistance - minKm) * perKm;
+
+  // Platform fee (fixed)
+  const platformFee = parseFloat(vehicle.platform_fee || 0);
+
+  // Access fee
+  const accessFee = parseFloat(vehicle.access_fee || 0);
+  let accessFeeAmount = 0;
+
+  if (vehicle.access_fee_type === "percent") {
+    accessFeeAmount = (fare * accessFee) / 100;
+  } else {
+    accessFeeAmount = accessFee;
+  }
+
+  // Total Fare
+  const totalFare = fare + platformFee + accessFeeAmount;
+
+  return parseFloat(totalFare.toFixed(2));
+};
   const renderVehicle = (vehicle) => {
     const isSelected = selectedVehicle === vehicle.id;
     const imageUri = vehicle.image

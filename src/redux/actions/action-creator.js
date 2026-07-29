@@ -3,7 +3,10 @@ import * as types from './action-types';
 import EndPoints from '../../services/EndPoints';
 import axiosinstance from '../../axios/axiosinstance';
 import messaging from '@react-native-firebase/messaging';
-
+import   {GET_NOTIFICATIONS_REQUEST,
+  GET_NOTIFICATIONS_SUCCESS,
+  GET_NOTIFICATIONS_FAILURE,
+} from './action-types';
 export const SEND_OTP = (mobile) => async (dispatch) => {
   dispatch({ type: types.SEND_OTP_REQUEST });
 console.log('mobile',mobile);
@@ -802,4 +805,29 @@ export const SUBMIT_PARCEL_RATING = (ratingData) => (dispatch) => {
       console.log('SUBMIT_PARCEL_RATING Error:', error.response?.data || error.message);
       throw error;
     });
+};
+
+// GET NOTIFICATIONS
+export const GET_NOTIFICATIONS = () => async (dispatch) => {
+  dispatch({ type:GET_NOTIFICATIONS_REQUEST });
+
+  try {
+    const response = await axiosinstance.get(EndPoints.userNotifications);
+    console.log('GET_NOTIFICATIONS Response:', response.data);
+
+    if (response.data?.status) {
+      dispatch({
+        type: GET_NOTIFICATIONS_SUCCESS,
+        payload: response.data,
+      });
+    } else {
+      dispatch({ type: GET_NOTIFICATIONS_FAILURE });
+    }
+
+    return response.data;
+  } catch (error) {
+    console.log('GET_NOTIFICATIONS Error:', error);
+    dispatch({ type: GET_NOTIFICATIONS_FAILURE });
+    return { status: false, message: error.response?.data?.message || 'Network error', data: [] };
+  }
 };
