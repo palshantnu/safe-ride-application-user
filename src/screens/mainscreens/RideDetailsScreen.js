@@ -334,10 +334,10 @@ const openImage = (image) => {
         <View style={styles.distanceInfo}>
           <Icon name="navigate-outline" size={16} color="#999" />
           <Text style={styles.distanceText}>Distance: {ride.distance} km</Text>
-          <View style={styles.passengerInfo}>
+          {!ride.isInCity && <View style={styles.passengerInfo}>
             <FontAwesome5 name="users" size={12} color="#999" />
             <Text style={styles.passengerText}>{ride.person} Passenger{ride.person > 1 ? 's' : ''}</Text>
-          </View>
+          </View>}
         </View>
       </View>
 

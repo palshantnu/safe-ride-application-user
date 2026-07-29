@@ -674,10 +674,11 @@ const secureProfileImage = profileImageUri.replace('http://', 'https://');
     const key = toStatusKey(status);
     const colors = {
       'SEARCHING': '#FF9800',
+      'BALANCE_PAID': '#4CAF50',
       'ACCEPTED': '#4CAF50',
       'TOKEN_PAID': '#2196F3',
       'ARRIVED': '#00BCD4',
-      'STARTED': '#FF5722',
+      'STARTED': '#4CAF50',
       'TOPUP_PENDING': '#FF9800',
       'WAITING_FOR_PAYMENT': '#F59E0B',
       'PAYMENT_DONE': '#8B5CF6',
@@ -1054,7 +1055,7 @@ console.log('vehicleTitle',vehicleTitle)
             </View>
           ) : null}
         </View>
-
+  {getActionButton(booking)}
         {booking?.schedule_date && (
           <View style={styles.scheduleDateRow}>
             <Icon name="calendar" size={14} color="#FF1493" />
@@ -1148,7 +1149,7 @@ console.log('vehicleTitle',vehicleTitle)
           </View>
         )}
 
-        {getActionButton(booking)}
+      
       </Animated.View>
     );
   };
@@ -1961,7 +1962,7 @@ console.log('vehicleTitle',vehicleTitle)
             </Text>
 
             <TextInput
-              style={styles.input}
+               style={{...styles.input,fontSize:13}}
               placeholder="Enter Full Pickup address"
               placeholderTextColor={'#000'}
               value={pickupAddress}
@@ -1970,7 +1971,7 @@ console.log('vehicleTitle',vehicleTitle)
             />
 
             <TextInput
-              style={styles.input}
+              style={{...styles.input,fontSize:13}}
               placeholder="Enter Landmark"
               placeholderTextColor={'#000'}
               value={landmark}
@@ -1978,9 +1979,10 @@ console.log('vehicleTitle',vehicleTitle)
             />
 
             <TextInput
-              style={styles.input}
+              style={{...styles.input,fontSize:10}}
               placeholder="Paste Google Maps location link (Optional)"
               placeholderTextColor={'#000'}
+              
               value={pickupLocation}
               onChangeText={setPickupLocation}
             />
@@ -2102,7 +2104,9 @@ console.log('vehicleTitle',vehicleTitle)
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.modalBtn, styles.submitBtn]}
+                style={[styles.modalBtn, styles.submitBtn,{
+                  backgroundColor: selectedPaymentMode === 'CASH' ? '#0c7124' : '#0c7124'
+                }]}
                 onPress={submitRemainingPayment}
                 disabled={isLoading}
               >
@@ -2156,7 +2160,7 @@ console.log('vehicleTitle',vehicleTitle)
                   style={[
                     styles.paymentModeText,
                     selectedPaymentMode === 'ONLINE' && styles.paymentModeTextSelected,
-                    { fontSize: 13, fontWeight: '700' }
+                    { fontSize: 14, fontWeight: '700' }
                   ]}
                 >
                   Pay to Sigi
@@ -2165,7 +2169,7 @@ console.log('vehicleTitle',vehicleTitle)
                   style={{
                     fontSize: 10,
                     color: selectedPaymentMode === 'ONLINE' ? '#fff' : '#FF1493',
-                    opacity: 0.8,
+                    opacity: 1,
                     marginTop: 2,
                     fontWeight: '500'
                   }}
@@ -2186,7 +2190,7 @@ console.log('vehicleTitle',vehicleTitle)
                   style={[
                     styles.paymentModeText,
                     selectedPaymentMode === 'CASH' && styles.paymentModeTextSelected,
-                    { fontSize: 13, fontWeight: '700' }
+                    { fontSize: 14, fontWeight: '700' }
                   ]}
                 >
                   Pay to Captain
@@ -2195,7 +2199,7 @@ console.log('vehicleTitle',vehicleTitle)
                   style={{
                     fontSize: 10,
                     color: selectedPaymentMode === 'CASH' ? '#fff' : '#FF1493',
-                    opacity: 0.8,
+                     opacity: 1,
                     marginTop: 2,
                     fontWeight: '500'
                   }}
@@ -2217,7 +2221,9 @@ console.log('vehicleTitle',vehicleTitle)
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.modalBtn, styles.submitBtn]}
+                style={[styles.modalBtn, styles.submitBtn,{
+                  backgroundColor: selectedPaymentMode === 'CASH' ? '#0c7124' : '#0c7124'
+                }]}
                 onPress={submitTopupPayment}
                 disabled={isLoading}
               >
@@ -2788,8 +2794,8 @@ alignSelf: 'flex-start',
     borderTopColor: '#FFE0B2',
   },
   payButtonText: {
-    fontSize: 14,
-    color: '#FF9800',
+    fontSize: 17,
+    color: '#07772c',
     fontWeight: '600',
   },
   otpInfoContainer: {
@@ -3013,7 +3019,7 @@ alignSelf: 'flex-start',
   },
   submitBtnText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '500',
   },
   paymentModeTitle: {

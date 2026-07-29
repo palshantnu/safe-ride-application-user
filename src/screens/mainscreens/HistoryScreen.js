@@ -55,6 +55,8 @@ console.log('booking--->', booking);
       return {
         id: booking.id,
         booking_id: booking.booking_id,
+        rating: booking.user_rating || 0,
+  review: booking.user_review || '',
         pickup: booking.pickup_address || booking.pickup_city,
         destination: booking.drop_address || booking.drop_city,
         price: fare,
@@ -67,7 +69,8 @@ console.log('booking--->', booking);
         person: booking.person,
         topups: [],
         topupAmount: 0,
-        rating: booking.rating || 0,
+        rating: booking.user_rating || 0,
+review: booking.user_review || '',
         meter_images: [],
         created_at: booking.created_at,
         isInCity: true,
@@ -86,7 +89,9 @@ console.log('booking--->', booking);
 
     return {
       id: booking.id,
-      booking_id: booking.booking_id,
+      
+      rating: booking.user_rating || 0,
+  review: booking.user_review || '',
       pickup: booking.pickup_address || booking.pickup_city,
       destination: booking.drop_address || booking.drop_city,
       to_city: booking.to_city,
@@ -99,9 +104,10 @@ console.log('booking--->', booking);
       status: booking.status?.toLowerCase() || 'completed',
       driverName: booking.driver_name || 'Not assigned',
       driverMobile: booking.driver_mobile || 'N/A',
-      rating: booking.rating || 0,
+      rating: booking.user_rating || 0,
+review: booking.user_review || '',
       distance: booking.plan_km || 0,
-      duration: booking.plan_hour || 0,
+      duration: booking.plan_hour || booking.plan_name || 0,
       person: booking.person,
       topups: booking.topups || [],
       meter_images: booking.meter_images || [],
@@ -345,10 +351,10 @@ console.log('booking--->', booking);
             <Text style={styles.statItemText}>{item.duration} hour{item.duration > 1 ? 's' : ''}</Text>
           </View>
         )}
-        <View style={styles.statItem}>
+       {!item.isInCity && <View style={styles.statItem}>
           <Icon name="people-outline" size={14} color="#999" />
           <Text style={styles.statItemText}>{item.person} passenger</Text>
-        </View>
+        </View>}
       </View>
 
       <View style={styles.rideStats}>
@@ -360,11 +366,16 @@ console.log('booking--->', booking);
 
       {item.rating > 0 && (
         <View style={styles.ratingContainer}>
-          <Icon name="star" size={12} color="#FFD700" />
+          <Icon name="star" size={15} color="#00bfff" />
           <Text style={styles.ratingText}>Rating: {item.rating}</Text>
         </View>
       )}
-
+{item.review ? (
+  <View style={styles.reviewContainer}>
+    <Icon name="chatbubble-ellipses-outline" size={12} color="#666" />
+    <Text style={styles.reviewText}>{item.review}</Text>
+  </View>
+) : null}
       <View style={styles.detailsIndicator}>
         <Text style={styles.detailsText}>View ride details</Text>
         <Icon name="chevron-forward" size={14} color="#FF1493" />
@@ -654,8 +665,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   ratingText: {
-    fontSize: 11,
-    color: '#FF9800',
+    fontSize: 15,
+    color: '#00bfff',
     fontWeight: '600',
   },
   detailsIndicator: {
@@ -717,6 +728,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
+  reviewContainer: {
+  flexDirection: 'row',
+  alignItems: 'flex-start',
+  marginTop: 8,
+  backgroundColor: '#F5F5F5',
+  paddingHorizontal: 10,
+  paddingVertical: 8,
+  borderRadius: 8,
+},
+
+reviewText: {
+  flex: 1,
+  marginLeft: 6,
+  fontSize: 12,
+  color: '#555',
+},
 });
 
 export default UserHistoryScreen;
