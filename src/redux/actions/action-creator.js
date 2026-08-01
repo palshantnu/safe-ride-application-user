@@ -173,10 +173,14 @@ export const CREATE_BOOKING = (bookingData) => async (dispatch) => {
 
 export const CREATE_BOOKING_PARCEL = (bookingData) => async (dispatch) => {
   dispatch({ type: types.CREATE_BOOKING_REQUEST });
-  console.log('bookingData--->', bookingData);
+  const parcelBookingData = {
+    ...bookingData,
+    weight_type: bookingData?.weight_type || 'kg',
+  };
+  console.log('bookingData--->', parcelBookingData);
   
   try {
-    const response = await axiosinstance.post(EndPoints.createBookingParcel, bookingData);
+    const response = await axiosinstance.post(EndPoints.createBookingParcel, parcelBookingData);
     console.log('CREATE_BOOKING Response:', response);
     
     if (response.data.status) {

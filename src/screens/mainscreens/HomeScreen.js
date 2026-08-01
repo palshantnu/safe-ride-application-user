@@ -1252,7 +1252,7 @@ console.log('vehicleTitle',vehicleTitle)
             <View style={styles.currentDetailTextWrap}>
               <Text style={styles.currentDetailLabel}>Weight</Text>
               <Text style={styles.currentDetailValue}>
-                {booking?.approx_weight ? `${booking.approx_weight} kg` : '-'}
+                {booking?.approx_weight ? `${booking.approx_weight} ${booking?.weight_type || 'kg'}` : '-'}
               </Text>
             </View>
           </View>

@@ -111,6 +111,9 @@ console.log('GET_MY_PARCELS response', res);
 
   useEffect(() => {
     fetchMyParcels();
+    setInterval(() => {
+      fetchMyParcels();
+    }, 5000);
   }, []);
 
   const onRefresh = async () => {
@@ -487,7 +490,7 @@ console.log('parcel_booking_id', item?.parcel_booking_id,'user_status', user_sta
         <View style={styles.footerRow}>
           <View style={styles.footerItem}>
             <FontAwesome5 name="weight-hanging" size={14} color="#666" />
-            <Text style={styles.footerText}>{weight ? `${weight} kg` : '—'}</Text>
+            <Text style={styles.footerText}>{weight ? `${weight} ${item?.weight_type || 'kg'}` : '—'}</Text>
           </View>
 
           <View style={styles.footerItem}>

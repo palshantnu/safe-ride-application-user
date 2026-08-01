@@ -159,6 +159,9 @@ const OnSpotBookings = ({ navigation }) => {
 
   useEffect(() => {
     fetchOnSpotBookings();
+    setInterval(() => {
+      fetchOnSpotBookings();
+    }, 5000);
   }, []);
 
   const onRefresh = async () => {
@@ -482,12 +485,7 @@ const OnSpotBookings = ({ navigation }) => {
           )}
 
           {/* Remarks */}
-          {booking.remarks && (
-            <View style={styles.infoRow}>
-              <Icon name="chatbubble-outline" size={18} color="#666" />
-              <Text style={styles.remarksText}>{booking.remarks}</Text>
-            </View>
-          )}
+       
 
           {/* Cancel Reason (if cancelled) */}
           {status === 'CANCELLED' && booking.cancel_reason && (
@@ -572,6 +570,12 @@ const OnSpotBookings = ({ navigation }) => {
                   <Text style={styles.actionButtonText}>Cancel</Text>
                 </TouchableOpacity>
             )}
+               {booking.remarks && (
+            <View style={styles.infoRow}>
+              <Icon name="chatbubble-outline" size={18} color="#666" />
+              <Text style={styles.remarksText}>{booking.remarks}</Text>
+            </View>
+          )}
       </View>
     );
   };
@@ -736,7 +740,7 @@ const OnSpotBookings = ({ navigation }) => {
                   style={{
                     fontSize: 10,
                     color: paymentMode === 'ONLINE' ? '#fff' : '#FF1493',
-                    opacity: 0.8,
+                    // opacity: 0.8,
                     marginTop: 2,
                     fontWeight: '500'
                   }}
@@ -788,7 +792,9 @@ const OnSpotBookings = ({ navigation }) => {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.modalBtn, styles.submitModalBtn]}
+                style={[styles.modalBtn, styles.submitModalBtn,{
+                  backgroundColor: paymentMode === 'CASH' ? '#4CAF50' : '#4CAF50'
+                }]}
                 onPress={submitPayment}
                 disabled={isLoading}
               >

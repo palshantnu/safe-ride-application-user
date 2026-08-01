@@ -1374,11 +1374,16 @@ const detailsSectionY = useRef(0);
   const [receiverName, setReceiverName] = useState('');
   const [receiverMobile, setReceiverMobile] = useState('');
   const [approxWeight, setApproxWeight] = useState('');
+  const [weightType, setWeightType] = useState('kg');
 
   const packagingMaterialTypes = useMemo(
     () => ['Plastic', 'Paper', 'Carton', 'Glass', 'Iron'],
     [],
   );
+  const weightTypeOptions = useMemo(() => [
+    { label: 'Kg', value: 'Kg' },
+    { label: 'Gram', value: 'Gram' },
+  ], []);
   const loadingUnloadingTypes = useMemo(
     () => ['User End', 'Captain End'],
     [],
@@ -1579,6 +1584,7 @@ useEffect(() => {
       receiver_mobile: receiverMobile,
 
       approx_weight: Number(approxWeight),
+      weight_type: weightType,
 
       packaging_material_type: packagingMaterialType,
       loading_unloading: loadingUnloading,
@@ -1943,13 +1949,43 @@ useEffect(() => {
                     <Icon name="weight" size={20} color="#FF1493" />
                     <TextInput
                       style={styles.input}
-                      placeholder="Approx Weight (kg)"
+                      placeholder="Approx Weight"
                       value={approxWeight}
                       onChangeText={setApproxWeight}
                       keyboardType="decimal-pad"
                       placeholderTextColor="#999"
                     />
                   </View>
+                  <View style={styles.divider} />
+
+                  {/* weight type dropdown */}
+                  <View style={styles.inputGroup}>
+                    <Icon name="scale-outline" size={20} color="#FF1493" />
+                    <Text style={styles.dropdownLabel}>Weight Type</Text>
+                  </View>
+                  <View style={styles.dropdownRow}>
+                    {weightTypeOptions.map((option) => (
+                      <TouchableOpacity
+                        key={option.value}
+                        style={[
+                          styles.dropdownChip,
+                          weightType === option.value && styles.dropdownChipSelected,
+                        ]}
+                        onPress={() => setWeightType(option.value)}
+                        activeOpacity={0.85}
+                      >
+                        <Text
+                          style={[
+                            styles.dropdownChipText,
+                            weightType === option.value && styles.dropdownChipTextSelected,
+                          ]}
+                        >
+                          {option.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
                   <View style={styles.divider} />
 
                   {/* packaging dropdown */}

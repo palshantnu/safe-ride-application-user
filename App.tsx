@@ -4,9 +4,9 @@ import { PersistGate } from 'redux-persist/integration/react';
 import { store, persistor } from './src/redux/store';
 import AppNavigator from './src/navigation/AppNavigator';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { PermissionsAndroid, StatusBar } from 'react-native';
+import { PermissionsAndroid, Platform, StatusBar } from 'react-native';
 import { promptForEnableLocationIfNeeded } from 'react-native-android-location-enabler';
-
+import { request as requestPermission, PERMISSIONS, RESULTS } from 'react-native-permissions';
 
 const App = () => {
 const requestLocationPermission = async () => {
@@ -27,6 +27,8 @@ useEffect(() => {
   };
 
   init();
+
+  requestNotificationPermission();
 }, []);
 
   const checkLocation = async () => {
@@ -42,6 +44,37 @@ useEffect(() => {
     }
   };
   
+  const requestNotificationPermission = async () => {
+  try {
+    if (Platform.OS === 'android') {
+      if (Platform.Version >= 33) {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+          {
+            title: 'Enable Notifications',
+            message: 'Allow notifications so you stay updated on KYC and ride updates.',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          },
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      }
+      return true;
+    }
+
+    if (Platform.OS === 'ios') {
+      const result = await requestPermission(PERMISSIONS.IOS.NOTIFICATIONS);
+      return result === RESULTS.GRANTED;
+    }
+
+    return true;
+  } catch (err) {
+    console.warn(err);
+    return false;
+  }
+};
+
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
