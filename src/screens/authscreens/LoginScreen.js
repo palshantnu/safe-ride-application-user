@@ -105,7 +105,8 @@ const LoginScreen = ({ navigation }) => {
             //     Alert.alert('Error', res.message || 'Invalid OTP');
             // }
         } catch (err) {
-            Alert.alert('Error', err.message);
+            console.log('err===>', err.response.data.message);
+            Alert.alert('Error', err.response.data.message || 'something went wrong');
         }
     };
 

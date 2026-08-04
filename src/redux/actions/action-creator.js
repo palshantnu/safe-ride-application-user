@@ -690,6 +690,17 @@ export const GET_USER_POPUPS = () => async () => {
   }
 };
 
+export const GET_APP_BANNERS = () => async () => {
+  try {
+    const response = await axiosinstance.get('/app-banners');
+
+    return response.data;
+  } catch (error) {
+    console.log('GET_APP_BANNERS Error', error);
+    return null;
+  }
+};
+
 
 export const CREATE_ONSPOT_BOOKING =
   bookingData => async dispatch => {

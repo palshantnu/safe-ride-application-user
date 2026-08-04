@@ -35,6 +35,7 @@ import {
   GET_SELF_SHARING_BOOKINGS,
   GET_ONSPOT_BOOKINGS,
   GET_USER_POPUPS,
+  GET_APP_BANNERS,
   SUBMIT_DRIVER_RATING,
   SUBMIT_SELF_SHARING_RATING,
   SUBMIT_ONSPOT_RATING,
@@ -84,6 +85,14 @@ const asArray = (data) => {
   return data ? [data] : [];
 };
 
+const BANNER_IMAGE_URL = 'https://sigiride.com/uploads/banners/';
+
+const DEFAULT_BANNER_SLIDES = [
+  { id: 1, title: 'Ride Safe, Ride Smart', subtitle: 'Book a verified driver anytime, anywhere', colors: ['#810a45', '#e20f7a'], icon: 'car' },
+  { id: 2, title: 'First Ride Offer!', subtitle: 'Get 50% off on your first ride with us', colors: ['#FF1493', '#FF69B4'], icon: 'gift' },
+  { id: 3, title: 'Multiple Services', subtitle: 'In-City, Rental, One-Way & more options', colors: ['#4A00E0', '#8E2DE2'], icon: 'map-pin' },
+];
+
 
 
 const HomeScreen = ({ navigation }) => {
@@ -127,11 +136,7 @@ const HomeScreen = ({ navigation }) => {
   const slideAnim = useRef(new Animated.Value(100)).current;
   const bannerRef = useRef(null);
 
-  const bannerSlides = [
-    { id: 1, title: 'Ride Safe, Ride Smart', subtitle: 'Book a verified driver anytime, anywhere', colors: ['#810a45', '#e20f7a'], icon: 'car' },
-    { id: 2, title: 'First Ride Offer!', subtitle: 'Get 50% off on your first ride with us', colors: ['#FF1493', '#FF69B4'], icon: 'gift' },
-    { id: 3, title: 'Multiple Services', subtitle: 'In-City, Rental, One-Way & more options', colors: ['#4A00E0', '#8E2DE2'], icon: 'map-pin' },
-  ];
+  const [bannerSlides, setBannerSlides] = useState(DEFAULT_BANNER_SLIDES);
 
   useEffect(() => {
     getGreeting();
@@ -139,6 +144,7 @@ const HomeScreen = ({ navigation }) => {
     fetchServices();
     fetchRecentBookings();
     fetchProfile();
+    fetchBanners();
 
      fetchPopup();
 
@@ -206,6 +212,18 @@ const HomeScreen = ({ navigation }) => {
 
   } catch (e) {
     console.log(e);
+  }
+};
+
+const fetchBanners = async () => {
+  try {
+    const res = await dispatch(GET_APP_BANNERS());
+    console.log('Banner response:', res);
+    if (res?.status && res?.data?.length) {
+      setBannerSlides(res.data);
+    }
+  } catch (e) {
+    console.log('Error fetching banners:', e);
   }
 };
 
@@ -1785,22 +1803,36 @@ console.log('vehicleTitle',vehicleTitle)
               const index = Math.round(e.nativeEvent.contentOffset.x / (width - 30));
               setBannerIndex(index);
             }}
-            renderItem={({ item }) => (
-              <LinearGradient
-                colors={item.colors}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.bannerSlide}
-              >
-                <View style={styles.bannerContent}>
-                  <View style={styles.bannerTextContainer}>
-                    <Text style={styles.bannerTitle}>{item.title}</Text>
-                    <Text style={styles.bannerSubtitle}>{item.subtitle}</Text>
+            renderItem={({ item }) => {
+              const slide = item.image ? (
+                <Image
+                  source={{ uri: `${BANNER_IMAGE_URL}${item.image}` }}
+                  style={styles.bannerImageSlide}
+                  resizeMode="cover"
+                />
+              ) : (
+                <LinearGradient
+                  colors={item.colors || ['#810a45', '#e20f7a']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.bannerSlide}
+                >
+                  <View style={styles.bannerContent}>
+                    <View style={styles.bannerTextContainer}>
+                      <Text style={styles.bannerTitle}>{item.title}</Text>
+                      {!!item.subtitle && <Text style={styles.bannerSubtitle}>{item.subtitle}</Text>}
+                    </View>
+                    {!!item.icon && <FontAwesome5 name={item.icon} size={50} color="rgba(255,255,255,0.3)" />}
                   </View>
-                  <FontAwesome5 name={item.icon} size={50} color="rgba(255,255,255,0.3)" />
-                </View>
-              </LinearGradient>
-            )}
+                </LinearGradient>
+              );
+
+              return item.link_url ? (
+                <TouchableOpacity activeOpacity={0.9} onPress={() => Linking.openURL(item.link_url)}>
+                  {slide}
+                </TouchableOpacity>
+              ) : slide;
+            }}
           />
           <View style={styles.bannerDots}>
             {bannerSlides.map((_, i) => (
@@ -3065,6 +3097,12 @@ alignSelf: 'flex-start',
     width: width - 30,
     borderRadius: 16,
     padding: 20,
+  },
+  bannerImageSlide: {
+    width: width - 30,
+    height: 150,
+    borderRadius: 16,
+    backgroundColor: '#f1f5f9',
   },
   bannerContent: {
     flexDirection: 'row',
