@@ -140,13 +140,16 @@ const HomeScreen = ({ navigation }) => {
 
   useEffect(() => {
     getGreeting();
-    fetchCurrentRide();
     fetchServices();
-    fetchRecentBookings();
     fetchProfile();
     fetchBanners();
 
      fetchPopup();
+
+    (async () => {
+      const [active, recent] = await Promise.all([fetchCurrentRide(), fetchRecentBookings()]);
+      checkWatchedBookingCancellation(active, recent);
+    })();
 
     const interval = setInterval(() => {
       fetchCurrentRide();
@@ -291,9 +294,11 @@ const closePopup = async () => {
 
       setActiveBookings(active);
       if (active.length > 0) animateRequest();
+      return active;
     } catch (error) {
       console.log('Error fetching current ride:', error);
       setActiveBookings([]);
+      return [];
     }
   };
 
@@ -324,10 +329,35 @@ const closePopup = async () => {
     try {
       const res = await dispatch(GET_USER_BOOKING_HISTORY());
       if (res?.status && res?.data) {
-        setRecentBookings(res.data.slice(0, 5));
+        const recent = res.data.slice(0, 5);
+        setRecentBookings(recent);
+        return recent;
       }
+      return [];
     } catch (error) {
       console.log('Error fetching recent bookings:', error);
+      return [];
+    }
+  };
+
+  // Cold-start reconciliation: catches a booking that auto-expired while the app
+  // was closed, regardless of whether it was reopened via the notification or the
+  // app icon (the live/foreground case is already handled by App.tsx's FCM listener).
+  const checkWatchedBookingCancellation = async (activeList = [], recentList = []) => {
+    try {
+      const watchedId = await AsyncStorage.getItem('WATCHED_BOOKING_ID');
+      if (!watchedId) return;
+
+      const stillActive = activeList.some((b) => String(b.booking_id) === watchedId);
+      if (stillActive) return; // still SEARCHING/accepted/etc — keep watching
+
+      const resolved = recentList.find((b) => String(b.booking_id) === watchedId);
+      if (resolved?.status === 'CANCELLED' && resolved?.cancelled_by === 'AUTOMATIC') {
+        Alert.alert('Booking Cancelled', 'Sorry, your booking has been cancelled. Please create a new booking.');
+      }
+      await AsyncStorage.removeItem('WATCHED_BOOKING_ID');
+    } catch (error) {
+      console.log('checkWatchedBookingCancellation error:', error);
     }
   };
 
@@ -751,7 +781,7 @@ const secureProfileImage = profileImageUri.replace('http://', 'https://');
                 onPress={() => navigation.navigate('InCityTracking', { booking })}
               >
                 <Icon name="map" size={16} color="#fff" />
-                <Text style={styles.actionButtonText}>Continue on Map</Text>
+                <Text style={styles.actionButtonText}>Continue Ride on Map</Text>
               </TouchableOpacity>
             </View>
           );

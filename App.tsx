@@ -4,9 +4,10 @@ import { PersistGate } from 'redux-persist/integration/react';
 import { store, persistor } from './src/redux/store';
 import AppNavigator from './src/navigation/AppNavigator';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { PermissionsAndroid, Platform, StatusBar } from 'react-native';
+import { PermissionsAndroid, Platform, StatusBar, Alert } from 'react-native';
 import { promptForEnableLocationIfNeeded } from 'react-native-android-location-enabler';
 import { request as requestPermission, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import messaging from '@react-native-firebase/messaging';
 
 const App = () => {
 const requestLocationPermission = async () => {
@@ -29,6 +30,29 @@ useEffect(() => {
   init();
 
   requestNotificationPermission();
+
+  const handleRemoteMessage = (remoteMessage) => {
+    if (remoteMessage?.data?.type === 'BOOKING_CANCELLED') {
+      Alert.alert(
+        remoteMessage.notification?.title || 'Booking Cancelled',
+        remoteMessage.notification?.body ||
+          'Sorry, your booking has been cancelled. Please create a new booking.',
+      );
+    }
+  };
+
+  const unsubscribeOnMessage = messaging().onMessage(handleRemoteMessage);
+  const unsubscribeOnOpened = messaging().onNotificationOpenedApp(handleRemoteMessage);
+  messaging()
+    .getInitialNotification()
+    .then((remoteMessage) => {
+      if (remoteMessage) handleRemoteMessage(remoteMessage);
+    });
+
+  return () => {
+    unsubscribeOnMessage();
+    unsubscribeOnOpened();
+  };
 }, []);
 
   const checkLocation = async () => {

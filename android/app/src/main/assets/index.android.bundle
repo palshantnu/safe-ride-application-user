@@ -124377,7 +124377,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
                   color: "#fff"
                 }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
                   style: styles.actionButtonText,
-                  children: "Continue on Map"
+                  children: "Continue Ride on Map"
                 })]
               })
             });

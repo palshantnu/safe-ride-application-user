@@ -180,9 +180,9 @@ const InCityTrackingScreen = ({ route, navigation }) => {
     }
   };
 
-  const stepIndex = STEPS.indexOf(booking.status);
-  const statusColor = STATUS_COLOR[booking.status] || '#757575';
-  const statusLabel = STATUS_LABEL[booking.status] || booking.status;
+  const stepIndex = STEPS?.indexOf(booking?.status);
+  const statusColor = STATUS_COLOR[booking?.status] || '#757575';
+  const statusLabel = STATUS_LABEL[booking?.status] || booking?.status;
 
   return (
     <View style={styles.container}>
@@ -250,7 +250,7 @@ const InCityTrackingScreen = ({ route, navigation }) => {
           ))}
         </View>
           {/* OTP — show when ARRIVED */}
-  {booking.status === 'ARRIVED' && booking.otp ? (
+  {booking?.status === 'ARRIVED' && booking.otp ? (
           <View style={styles.otpHorizontalCard}>
             <Text style={styles.otpHorizontalLabel}>Share OTP to captain</Text>
             <Text style={styles.otpHorizontalValue}>{booking.otp}</Text>
@@ -315,8 +315,8 @@ const InCityTrackingScreen = ({ route, navigation }) => {
         <Text style={styles.bookingId}>Booking ID: {booking.booking_id}</Text>
 
         {/* Cancel button — always visible */}
-        {console.log('booking.status', booking.status)}
-        {/* {(booking.status === 'ARRIVED' || booking.status === 'ACCEPTED') &&
+        {console.log('booking?.status', booking?.status)}
+        {/* {(booking?.status === 'ARRIVED' || booking?.status === 'ACCEPTED') &&
           ( */}
           <TouchableOpacity
             style={styles.cancelBtn}
@@ -329,7 +329,7 @@ const InCityTrackingScreen = ({ route, navigation }) => {
           </TouchableOpacity>
         {/* )} */}
 
-        {booking.status === 'COMPLETED' && (
+        {booking?.status === 'COMPLETED' && (
           <TouchableOpacity style={styles.doneBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.doneBtnText}>Done</Text>
           </TouchableOpacity>

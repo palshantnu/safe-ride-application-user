@@ -18,6 +18,7 @@ import Geolocation from '@react-native-community/geolocation';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Feather';
 import { useDispatch, useSelector } from 'react-redux';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CREATE_BOOKING, CLEAR_BOOKING_DATA, GET_SUB_SERVICES } from '../../redux/actions/action-creator';
 import { IMAGE_URL } from '../../axios/axiosinstance';
 import CurvedHeader from '../../components/CurvedHeader';
@@ -70,7 +71,7 @@ const haversineDistance = (lat1, lon1, lat2, lon2) => {
 const InCityScreen = ({ route, navigation }) => {
   const { service_id } = route.params;
   const dispatch = useDispatch();
-  const { bookingLoading, bookingSuccess, bookingError, subServices, subServicesLoading } = useSelector((state) => state.common);
+  const { bookingLoading, bookingSuccess, bookingError, booking, subServices, subServicesLoading } = useSelector((state) => state.common);
 
   const mapRef = useRef(null);
   const debounceRef = useRef(null);
@@ -123,11 +124,14 @@ const InCityScreen = ({ route, navigation }) => {
 
   useEffect(() => {
     if (bookingSuccess) {
+      if (booking?.booking_id) {
+        AsyncStorage.setItem('WATCHED_BOOKING_ID', String(booking.booking_id));
+      }
       Alert.alert('Success', 'Booking created successfully!', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     }
-  }, [bookingSuccess, navigation]);
+  }, [bookingSuccess, booking, navigation]);
 
   useEffect(() => {
     if (bookingError) {

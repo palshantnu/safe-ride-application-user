@@ -1484,6 +1484,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Dropdown } from 'react-native-element-dropdown';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   CREATE_BOOKING,
   GET_PLANS,
@@ -1518,6 +1519,7 @@ const detailsSectionY = useRef(0);
     bookingLoading,
     bookingSuccess,
     bookingError,
+    booking,
   } = useSelector((state) => state.common);
 
   const [selectedVehicle, setSelectedVehicle] = useState(null);
@@ -1633,11 +1635,14 @@ const detailsSectionY = useRef(0);
 
   useEffect(() => {
     if (bookingSuccess) {
+      if (booking?.booking_id) {
+        AsyncStorage.setItem('WATCHED_BOOKING_ID', String(booking.booking_id));
+      }
       Alert.alert('Success', 'Booking created successfully!', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     }
-  }, [bookingSuccess, navigation]);
+  }, [bookingSuccess, booking, navigation]);
 
   useEffect(() => {
     if (bookingError) {
