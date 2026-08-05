@@ -159,12 +159,11 @@ export const CREATE_BOOKING = (bookingData) => async (dispatch) => {
     return response.data;
   } catch (error) {
     console.log('CREATE_BOOKING Error:', error);
-       console.log('UPDATE_USER_PROFILE Error:', error);
       console.log('error', error.response?.data);
       console.log('status', error.response?.status);
     dispatch({
       type: types.CREATE_BOOKING_FAILURE,
-      payload: error.message,
+      payload: error.response?.data?.message || error.message,
     });
     throw error;
   }
