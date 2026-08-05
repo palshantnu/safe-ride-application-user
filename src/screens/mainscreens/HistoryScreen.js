@@ -343,7 +343,7 @@ review: booking.user_review || '',
       <View style={styles.rideStats}>
         <View style={styles.statItem}>
           <Icon name="speedometer-outline" size={14} color="#999" />
-          <Text style={styles.statItemText}>{item.distance} km</Text>
+          <Text style={styles.statItemText}>{Math.ceil(item.distance)} km</Text>
         </View>
         {!item.isInCity && item.duration != null && (
           <View style={styles.statItem}>

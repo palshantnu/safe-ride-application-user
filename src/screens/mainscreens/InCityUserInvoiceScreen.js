@@ -51,6 +51,7 @@ const InCityUserInvoiceScreen = ({ route, navigation }) => {
   const fetchInvoice = useCallback(async () => {
     try {
       const res = await dispatch(GET_INVOICE({ booking_id: bookingId }));
+      console.log('ffee',res)
       if (res?.status && res?.invoice) {
         setInvoice(res.invoice);
       }

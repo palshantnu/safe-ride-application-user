@@ -63,7 +63,6 @@ const InCityTrackingScreen = ({ route, navigation }) => {
   const pollRef = useRef(null);
 
   const [booking, setBooking] = useState(initialBooking);
-  console.log('initialBooking', initialBooking);
   const [routeCoords, setRouteCoords] = useState([]);
   const [cancelling, setCancelling] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -119,9 +118,8 @@ const InCityTrackingScreen = ({ route, navigation }) => {
     const poll = async () => {
       try {
         const res = await dispatch(GET_USER_CURRENT_BOOKING());
-        if (res?.data) {
+        if (res?.data?.length) {
           setBooking(res.data[0]);
-          console.log('res.data[0]', res.data[0]);
 
           if (res.data[0].driver_current_lat && res.data[0].driver_current_lng) {
             setDriverLocation({
@@ -135,6 +133,11 @@ const InCityTrackingScreen = ({ route, navigation }) => {
           } else if (['COMPLETED', 'CANCELLED'].includes(res.data[0].status)) {
             clearInterval(pollRef.current);
           }
+        } else if (res?.data) {
+          // booking no longer active (e.g. cancelled) — endpoint returns no current booking
+          clearInterval(pollRef.current);
+          Alert.alert('Booking Cancelled', 'This ride has been cancelled.');
+          navigation.goBack();
         }
       } catch (_) { }
     };
@@ -175,7 +178,7 @@ const InCityTrackingScreen = ({ route, navigation }) => {
   };
 
   const handleCall = () => {
-    if (booking.driver_mobile) {
+    if (booking?.driver_mobile) {
       Linking.openURL(`tel:${booking.driver_mobile}`);
     }
   };
@@ -257,7 +260,7 @@ const InCityTrackingScreen = ({ route, navigation }) => {
           </View>
         ) : null}
           {/* Driver info */}
-        {booking.driver_name ? (
+        {booking?.driver_name ? (
           <View style={styles.card}>
             <View style={styles.driverRow}>
               <View style={styles.driverAvatar}>
@@ -287,12 +290,12 @@ const InCityTrackingScreen = ({ route, navigation }) => {
             <View style={styles.routeTexts}>
               <Text style={styles.routeLabel}>Pickup</Text>
               <Text style={styles.routeAddr} numberOfLines={2}>
-                {booking.pickup_address || booking.pickup_city}
+                {booking?.pickup_address || booking?.pickup_city}
               </Text>
               <View style={styles.routeGap} />
               <Text style={styles.routeLabel}>Drop</Text>
               <Text style={styles.routeAddr} numberOfLines={2}>
-                {booking.drop_address || booking.drop_city}
+                {booking?.drop_address || booking?.drop_city}
               </Text>
             </View>
           </View>
@@ -307,15 +310,14 @@ const InCityTrackingScreen = ({ route, navigation }) => {
         <View style={styles.fareNoteCard}>
           <Icon name="info" size={16} color="#FF9800" />
           <Text style={styles.fareNoteText}>
-            {booking.fare_note || 'Fare will be calculated on meter at trip end'}
+            {booking?.fare_note || 'Fare will be calculated on meter at trip end'}
           </Text>
         </View>
 
         {/* Booking ID */}
-        <Text style={styles.bookingId}>Booking ID: {booking.booking_id}</Text>
+        <Text style={styles.bookingId}>Booking ID: {booking?.booking_id}</Text>
 
         {/* Cancel button — always visible */}
-        {console.log('booking?.status', booking?.status)}
         {/* {(booking?.status === 'ARRIVED' || booking?.status === 'ACCEPTED') &&
           ( */}
           <TouchableOpacity
