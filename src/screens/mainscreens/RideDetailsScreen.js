@@ -409,6 +409,14 @@ const openImage = (image) => {
           <Text style={styles.paymentLabel}>{ride.isInCity ? 'Ride Fare' : 'Base Fare'}</Text>
           <Text style={styles.paymentValue}>{formatPrice(ride.isInCity ? ride.price : ride.basePrice)}</Text>
         </View>
+        {ride.platform_fee && <View style={styles.paymentRow}>
+          <Text style={styles.paymentLabel}>Platform fee</Text>
+          <Text style={styles.paymentValue}>{ride.platform_fee}</Text>
+        </View>}
+       {ride.access_fee && <View style={styles.paymentRow}>
+          <Text style={styles.paymentLabel}>Access fee</Text>
+          <Text style={styles.paymentValue}>{ride.access_fee}</Text>
+        </View>}
         {ride.topupAmount > 0 && (
           <View style={styles.paymentRow}>
             <Text style={styles.paymentLabel}>Extra Charges (Topups)</Text>

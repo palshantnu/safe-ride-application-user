@@ -18,6 +18,7 @@ import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import LinearGradient from 'react-native-linear-gradient';
 import RazorpayCheckout from 'react-native-razorpay';
 import { useDispatch, useSelector } from 'react-redux';
+import { stopNotificationSound } from '../../utils/notificationRing';
 
 import CurvedHeader from '../../components/CurvedHeader';
 import {
@@ -336,6 +337,7 @@ const handlePayToken = async (parcel) => {
         );
 
         if (res?.status) {
+          stopNotificationSound();
           Alert.alert('Success', 'Balance payment successful!');
           await fetchMyParcels();
         } else {
@@ -352,6 +354,7 @@ const handlePayToken = async (parcel) => {
       );
 
       if (res?.status) {
+        stopNotificationSound();
         Alert.alert('Success', 'Cash payment recorded successfully');
         await fetchMyParcels();
       } else {
@@ -392,6 +395,7 @@ const submitCancelParcel = async () => {
     );
 
     if (res?.status) {
+      stopNotificationSound();
       setShowCancelModal(false);
       Alert.alert(
         'Success',

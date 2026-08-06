@@ -22,6 +22,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import axios, { IMAGE_URL } from '../../axios/axiosinstance';
 import { useSelector } from 'react-redux';
 import RazorpayCheckout from 'react-native-razorpay';
+import { stopNotificationSound } from '../../utils/notificationRing';
 
 const OnSpotBookings = ({ navigation }) => {
   const [currentBookings, setCurrentBookings] = useState([]);
@@ -254,6 +255,7 @@ const OnSpotBookings = ({ navigation }) => {
       console.log('Payment Response:', response?.data);
 
       if (response?.data?.status) {
+        stopNotificationSound();
         Alert.alert('Success', response?.data?.message || 'Payment successful');
         setShowPaymentModal(false);
         setSelectedBooking(null);
@@ -296,6 +298,7 @@ const OnSpotBookings = ({ navigation }) => {
       console.log('Cancel Response:', response?.data);
 
       if (response?.data?.status) {
+        stopNotificationSound();
         Alert.alert('Success', 'Booking cancelled successfully');
         setShowCancelModal(false);
         setCancelReason('');

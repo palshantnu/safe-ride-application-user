@@ -18,6 +18,7 @@ import {
   Linking
 } from 'react-native';
 import RazorpayCheckout from 'react-native-razorpay';
+import { stopNotificationSound } from '../../utils/notificationRing';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Feather';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
@@ -174,6 +175,19 @@ const HomeScreen = ({ navigation }) => {
       }
     }
   }, [activeBookings, shownRatings]);
+
+  // Safety net for the BOOKING_ARRIVED ring (started from the push in App.tsx):
+  // silence it if there's no non-In City ride still waiting on Pay Remaining /
+  // Cancel. Does NOT start the ring — only stops it (e.g. when the arrived
+  // booking turns out to be a plain In City ride, which never rings).
+  useEffect(() => {
+    const hasUnactionedArrival = activeBookings.some(
+      (b) => b.__bookingType === BOOKING_TYPE.RIDE && !b.is_incity && b.status === 'ARRIVED'
+    );
+    if (!hasUnactionedArrival) {
+      stopNotificationSound();
+    }
+  }, [activeBookings]);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -577,6 +591,7 @@ const secureProfileImage = profileImageUri.replace('http://', 'https://');
       console.log('Remaining payment response:', res);
 
       if (res?.status) {
+        stopNotificationSound();
         Alert.alert('Success', 'Payment completed successfully');
         setShowRemainingPayModal(false);
         setSelectedBooking(null);
@@ -653,6 +668,7 @@ const secureProfileImage = profileImageUri.replace('http://', 'https://');
       }));
 
       if (res?.status) {
+        stopNotificationSound();
         setShowCancelModal(false);
         Alert.alert('Success', 'Ride cancelled successfully');
         await fetchCurrentRide();

@@ -8,6 +8,7 @@ import { PermissionsAndroid, Platform, StatusBar, Alert } from 'react-native';
 import { promptForEnableLocationIfNeeded } from 'react-native-android-location-enabler';
 import { request as requestPermission, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import messaging from '@react-native-firebase/messaging';
+import { playNotificationSound, stopNotificationSound } from './src/utils/notificationRing';
 
 const App = () => {
 const requestLocationPermission = async () => {
@@ -33,8 +34,15 @@ useEffect(() => {
 
   const handleRemoteMessage = (remoteMessage) => {
     console.log('FCM Notification (foreground/opened):', remoteMessage);
+    console.log('FCM data.type:', JSON.stringify(remoteMessage?.data?.type));
+
+    if (remoteMessage?.data?.type === 'BOOKING_ARRIVED') {
+      console.log('BOOKING_ARRIVED matched, calling playNotificationSound()');
+      playNotificationSound();
+    }
 
     if (remoteMessage?.data?.type === 'BOOKING_CANCELLED') {
+      stopNotificationSound();
       Alert.alert(
         remoteMessage.notification?.title || 'Booking Cancelled',
         remoteMessage.notification?.body ||

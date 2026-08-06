@@ -85,7 +85,8 @@ review: booking.user_review || '',
     // Old booking type
     const totalTopupAmount = booking.topups?.reduce((sum, topup) =>
       sum + parseFloat(topup.topup_amount), 0) || 0;
-    const totalFare = parseFloat(booking.plan_price) + totalTopupAmount;
+    const totalFare = parseFloat(booking.plan_price) + totalTopupAmount + parseFloat(booking.
+access_fee || 0) + parseFloat(booking.platform_fee || 0);
 
     return {
       id: booking.id,
@@ -113,6 +114,8 @@ review: booking.user_review || '',
       meter_images: booking.meter_images || [],
       created_at: booking.created_at,
       isInCity: false,
+       platform_fee: parseFloat(booking.platform_fee || 0),
+      access_fee: parseFloat(booking.access_fee || 0),
     };
   };
 
