@@ -17,7 +17,7 @@ import CurvedHeader from '../../components/CurvedHeader';
 
 const RideDetailsScreen = ({ route, navigation }) => {
   const { ride } = route.params;
-  console.log('ride', ride);
+  console.log('ride===>', ride);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);

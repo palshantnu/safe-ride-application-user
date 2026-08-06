@@ -32,6 +32,8 @@ useEffect(() => {
   requestNotificationPermission();
 
   const handleRemoteMessage = (remoteMessage) => {
+    console.log('FCM Notification (foreground/opened):', remoteMessage);
+
     if (remoteMessage?.data?.type === 'BOOKING_CANCELLED') {
       Alert.alert(
         remoteMessage.notification?.title || 'Booking Cancelled',

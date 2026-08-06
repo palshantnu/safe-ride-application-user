@@ -89,7 +89,7 @@ review: booking.user_review || '',
 
     return {
       id: booking.id,
-      
+      booking_id: booking.booking_id, 
       rating: booking.user_rating || 0,
   review: booking.user_review || '',
       pickup: booking.pickup_address || booking.pickup_city,
