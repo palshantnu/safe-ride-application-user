@@ -343,7 +343,7 @@ const closePopup = async () => {
     try {
       const res = await dispatch(GET_USER_BOOKING_HISTORY());
       if (res?.status && res?.data) {
-        const recent = res.data.slice(0, 5);
+        const recent = res.data.slice(0, 1);
         setRecentBookings(recent);
         return recent;
       }
@@ -3146,7 +3146,7 @@ alignSelf: 'flex-start',
   },
   bannerImageSlide: {
     width: width - 30,
-    height: 150,
+    height: 100,
     borderRadius: 16,
     backgroundColor: '#f1f5f9',
   },
