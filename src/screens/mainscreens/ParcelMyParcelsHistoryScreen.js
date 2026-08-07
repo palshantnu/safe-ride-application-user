@@ -423,7 +423,7 @@ const submitCancelParcel = async () => {
     const status = item?.status || item?.parcel_status || item?.driver_status;
 
     const statusLower = (status || '').toString().toLowerCase();
-    console.log('statusLower',statusLower);
+    console.log('statusLower',item);
     
     const isCancelled = statusLower.includes('cancelled') || statusLower.includes('cancel');
     const isDelivered = statusLower.includes('delivered') || statusLower.includes('complete');
@@ -511,7 +511,7 @@ console.log('parcel_booking_id', item?.parcel_booking_id,'user_status', user_sta
         <View style={styles.amountRow}>
           <View style={styles.amountItem}>
             <Text style={styles.amountLabel}>Total Amount</Text>
-            <Text style={styles.amountValue}>₹{totalAmount.toFixed(2)}</Text>
+            <Text style={styles.amountValue}>₹{Math.ceil(totalAmount)}</Text>
           </View>
           <View style={styles.amountItem}>
             <Text style={styles.amountLabel}>Token Amount</Text>
@@ -519,7 +519,7 @@ console.log('parcel_booking_id', item?.parcel_booking_id,'user_status', user_sta
           </View>
           <View style={styles.amountItem}>
             <Text style={styles.amountLabel}>Balance</Text>
-            <Text style={styles.balanceAmount}>₹{balanceAmount.toFixed(2)}</Text>
+            <Text style={styles.balanceAmount}>₹{Math.ceil(balanceAmount)}</Text>
           </View>
         </View>
 {(!isDelivered && !isCancelled) &&  <>

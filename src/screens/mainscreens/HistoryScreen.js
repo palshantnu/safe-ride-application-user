@@ -48,8 +48,9 @@ const UserHistoryScreen = ({ navigation }) => {
   };
 
   const formatRideData = (booking) => {
+    console.log('booking--->', booking);
     const isInCity = booking.is_incity === true || booking.is_incity === 1;
-console.log('booking--->', booking);
+
     if (isInCity) {
       const fare = parseFloat(booking.final_fare || booking.actual_fare || booking.total_fare || 0);
       return {
