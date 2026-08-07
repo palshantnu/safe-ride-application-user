@@ -641,7 +641,7 @@ console.log('parcel_booking_id', item?.parcel_booking_id,'user_status', user_sta
             <Text style={styles.remarksText}>{item.remarks}</Text>
           </View>
         ) : null}
-
+  <Text style={styles.expiryNotice}>Image will be expired after 15 days.</Text>
         {(item?.pickup_image || item?.delivery_image) ? (
           <View style={styles.imagesRowContainer}>
             {item?.pickup_image ? (
@@ -1176,6 +1176,12 @@ const styles = StyleSheet.create({
     top: 50,
     right: 20,
     zIndex: 10,
+  },
+    expiryNotice: {
+    fontSize: 12,
+    color: '#FF3B30',
+    marginTop: 10,
+    fontWeight: '500',
   },
 });
 
