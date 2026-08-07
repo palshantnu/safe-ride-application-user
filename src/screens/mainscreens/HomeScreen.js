@@ -3406,10 +3406,10 @@ popupImage: {
 },
 
 popupTitle: {
-    fontSize: 22,
+    fontSize: 15,
     fontWeight: '700',
     color: '#222',
-    marginTop: 18,
+    marginTop: 10,
     textAlign: 'center',
 },
 
@@ -3419,14 +3419,14 @@ popupMessage: {
     textAlign: 'center',
     marginHorizontal: 20,
     marginTop: 10,
-    lineHeight: 22,
+    lineHeight: 10,
 },
 
 popupButton: {
     margin: 20,
     backgroundColor: '#ff4d6d',
     borderRadius: 30,
-    paddingVertical: 14,
+    paddingVertical: 8,
 },
 
   popupButtonText: {
