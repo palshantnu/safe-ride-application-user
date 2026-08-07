@@ -227,6 +227,7 @@ const handleDateChange = (event, date) => {
 
   // Render trip card
   const renderTripCard = ({ item }) => {
+    console.log('item===>',item)
     const hasSeats = parseInt(item.available_seats) > 0;
     const statusColor = getStatusColor(item.status);
     const tripDuration = getTripDuration(item.departure_time);
