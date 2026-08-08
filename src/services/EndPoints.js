@@ -17,5 +17,6 @@ const EndPoints = {
   userNotifications:'notifications/user',
   supportConversation: 'support/conversation',
   supportSend: 'support/send',
+  appVersion: 'app-version',
 };
 export default EndPoints;
