@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,55 +10,85 @@ import {
   Platform,
   StatusBar,
   ActivityIndicator,
-  ScrollView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSelector } from 'react-redux';
+import { io } from 'socket.io-client';
 import CurvedHeader from '../../components/CurvedHeader';
+import { getSupportConversation, sendSupportMessage } from '../../services/Services';
+import { baseURL } from '../../axios/axiosinstance';
+
+const SOCKET_URL = baseURL.replace(/\/api\/?$/, '');
 
 const ChatSupportScreen = ({ navigation }) => {
-  const [messages, setMessages] = useState([
-    {
-      id: '1',
-      text: 'Hello! Welcome to Customer Support. How can I help you today?',
-      sender: 'support',
-      timestamp: new Date(Date.now() - 300000),
-    },
-    {
-      id: '2',
-      text: 'I need help with my ride booking',
-      sender: 'user',
-      timestamp: new Date(Date.now() - 240000),
-    },
-    {
-      id: '3',
-      text: 'I\'d be happy to help! Could you please provide your booking ID or tell me more about the issue?',
-      sender: 'support',
-      timestamp: new Date(Date.now() - 180000),
-    },
-  ]);
+  const { token } = useSelector((state) => state.auth);
+  const [conversationId, setConversationId] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [inputText, setInputText] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  const [sending, setSending] = useState(false);
   const flatListRef = useRef(null);
-
-  const supportResponses = {
-    booking: "I'll help you with your booking. Please share your booking ID and I'll look into it right away.",
-    payment: "For payment-related issues, please check your transaction history. If the amount is debited, it will be refunded within 3-5 business days.",
-    driver: "I understand your concern about the driver. Please share the ride details and I'll escalate this to our team.",
-    cancellation: "I'll help you cancel the ride. Please note that cancellation charges may apply based on the timing.",
-    refund: "Refunds typically take 3-5 business days to reflect in your account. Let me check the status for you.",
-    default: "Thank you for reaching out. I'll assist you with your query. Could you please provide more details?",
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  const socketRef = useRef(null);
+  const conversationIdRef = useRef(null);
 
   const scrollToBottom = () => {
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, 100);
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
   };
+
+  const loadConversation = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await getSupportConversation();
+      const conv = res?.data?.conversation;
+      const msgs = res?.data?.messages || [];
+      setConversationId(conv?.id ?? null);
+      setMessages(msgs);
+      scrollToBottom();
+    } catch (e) {
+      console.log('getSupportConversation error:', e?.response?.data || e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadConversation();
+  }, [loadConversation]);
+
+  // live updates while the screen is open
+  useEffect(() => {
+    if (!token) return;
+    const socket = io(SOCKET_URL, {
+      auth: { token: `Bearer ${token}`, client_type: 'USER' },
+      transports: ['websocket', 'polling'],
+    });
+    socketRef.current = socket;
+
+    // Rooms don't survive a reconnect (network blip, app backgrounded then
+    // resumed, etc.) — 'connect' fires on the very first connection AND every
+    // reconnection, so re-joining here (instead of only when conversationId
+    // first changes) is what keeps live messages flowing without a manual reload.
+    socket.on('connect', () => {
+      if (conversationIdRef.current) {
+        socket.emit('join_conversation', conversationIdRef.current);
+      }
+    });
+
+    socket.on('new_message', (msg) => {
+      setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+      scrollToBottom();
+    });
+
+    return () => socket.disconnect();
+  }, [token]);
+
+  useEffect(() => {
+    conversationIdRef.current = conversationId;
+    if (conversationId && socketRef.current?.connected) {
+      socketRef.current.emit('join_conversation', conversationId);
+    }
+  }, [conversationId]);
 
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
@@ -75,133 +105,95 @@ const ChatSupportScreen = ({ navigation }) => {
     return date.toLocaleDateString();
   };
 
-  const getAutoResponse = (userMessage) => {
-    const lowerMsg = userMessage.toLowerCase();
-    
-    if (lowerMsg.includes('booking') || lowerMsg.includes('ride')) {
-      return supportResponses.booking;
-    } else if (lowerMsg.includes('payment') || lowerMsg.includes('money') || lowerMsg.includes('paid')) {
-      return supportResponses.payment;
-    } else if (lowerMsg.includes('driver') || lowerMsg.includes('rude') || lowerMsg.includes('behavior')) {
-      return supportResponses.driver;
-    } else if (lowerMsg.includes('cancel') || lowerMsg.includes('cancellation')) {
-      return supportResponses.cancellation;
-    } else if (lowerMsg.includes('refund') || lowerMsg.includes('return')) {
-      return supportResponses.refund;
-    } else {
-      return supportResponses.default;
+  const handleSendMessage = async () => {
+    const text = inputText.trim();
+    if (!text || sending) return;
+
+    setInputText('');
+    setSending(true);
+    try {
+      const res = await sendSupportMessage(text);
+      const saved = res?.data;
+      if (saved) {
+        setConversationId(saved.conversation_id);
+        setMessages((prev) => (prev.some((m) => m.id === saved.id) ? prev : [...prev, saved]));
+        scrollToBottom();
+      }
+    } catch (e) {
+      console.log('sendSupportMessage error:', e?.response?.data || e.message);
+      setInputText(text);
+    } finally {
+      setSending(false);
     }
   };
 
-  const handleSendMessage = () => {
-    if (!inputText.trim()) return;
+  const formatDateLabel = (timestamp) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const isSameDay = (a, b) =>
+      a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
 
-    // Add user message
-    const userMessage = {
-      id: Date.now().toString(),
-      text: inputText.trim(),
-      sender: 'user',
-      timestamp: new Date(),
-    };
-    setMessages(prev => [...prev, userMessage]);
-    setInputText('');
-    scrollToBottom();
-
-    // Show typing indicator
-    setIsTyping(true);
-
-    // Simulate support response after delay
-    setTimeout(() => {
-      const autoResponse = getAutoResponse(userMessage.text);
-      const supportMessage = {
-        id: (Date.now() + 1).toString(),
-        text: autoResponse,
-        sender: 'support',
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, supportMessage]);
-      setIsTyping(false);
-      scrollToBottom();
-    }, 1000 + Math.random() * 1000);
+    if (isSameDay(date, now)) return 'Today';
+    if (isSameDay(date, yesterday)) return 'Yesterday';
+    return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
-  const handleQuickReply = (reply) => {
-    setInputText(reply);
-  };
+  const renderMessage = ({ item, index }) => {
+    const isSupport = item.sender_type === 'ADMIN';
+    const prevItem = messages[index - 1];
+    const showDateSeparator =
+      !prevItem || formatDateLabel(prevItem.created_at) !== formatDateLabel(item.created_at);
 
-  const renderMessage = ({ item }) => {
-    const isSupport = item.sender === 'support';
-    
     return (
-      <View style={[
-        styles.messageContainer,
-        isSupport ? styles.supportMessageContainer : styles.userMessageContainer,
-      ]}>
-        {isSupport && (
-          <View style={styles.supportAvatar}>
-            <Icon name="headset" size={20} color="#FF1493" />
+      <>
+        {showDateSeparator && (
+          <View style={styles.dateSeparatorContainer}>
+            <View style={styles.dateSeparatorPill}>
+              <Text style={styles.dateSeparatorText}>{formatDateLabel(item.created_at)}</Text>
+            </View>
           </View>
         )}
         <View style={[
-          styles.messageBubble,
-          isSupport ? styles.supportBubble : styles.userBubble,
+          styles.messageContainer,
+          isSupport ? styles.supportMessageContainer : styles.userMessageContainer,
         ]}>
-          <Text style={[
-            styles.messageText,
-            isSupport ? styles.supportText : styles.userText,
+          {isSupport && (
+            <View style={styles.supportAvatar}>
+              <Icon name="headset" size={18} color="#FF1493" />
+            </View>
+          )}
+          <View style={[
+            styles.messageBubble,
+            isSupport ? styles.supportBubble : styles.userBubble,
           ]}>
-            {item.text}
-          </Text>
-          <Text style={styles.timestamp}>
-            {formatTime(item.timestamp)}
-          </Text>
-        </View>
-      </View>
-    );
-  };
-
-  const renderTypingIndicator = () => {
-    if (!isTyping) return null;
-    
-    return (
-      <View style={[styles.messageContainer, styles.supportMessageContainer]}>
-        <View style={styles.supportAvatar}>
-          <Icon name="headset" size={20} color="#FF1493" />
-        </View>
-        <View style={[styles.messageBubble, styles.supportBubble]}>
-          <View style={styles.typingContainer}>
-            <View style={styles.typingDot} />
-            <View style={[styles.typingDot, { animationDelay: '0.2s' }]} />
-            <View style={[styles.typingDot, { animationDelay: '0.4s' }]} />
+            <Text style={[
+              styles.messageText,
+              isSupport ? styles.supportText : styles.userText,
+            ]}>
+              {item.message}
+            </Text>
+            <Text style={[
+              styles.timestamp,
+              isSupport ? styles.supportTimestamp : styles.userTimestamp,
+            ]}>
+              {formatTime(item.created_at)}
+            </Text>
           </View>
         </View>
-      </View>
+      </>
     );
   };
 
-  const quickReplies = [
-    { id: '1', text: 'Booking Issue', icon: 'calendar' },
-    { id: '2', text: 'Payment Problem', icon: 'card' },
-    { id: '3', text: 'Driver Issue', icon: 'person' },
-    { id: '4', text: 'Cancel Ride', icon: 'close-circle' },
-    { id: '5', text: 'Refund Status', icon: 'refresh' },
-    { id: '6', text: 'General Query', icon: 'chatbubble' },
-  ];
-
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#ff7f50" />
-      
-      {/* Header */}
+
       <CurvedHeader
         title="Customer Support"
         navigation={navigation}
         showBack
-        right={(
-          <TouchableOpacity style={styles.menuButton}>
-          <Icon name="ellipsis-vertical" size={20} color="#fff" />
-          </TouchableOpacity>
-        )}
       />
 
       <KeyboardAvoidingView
@@ -209,42 +201,33 @@ const ChatSupportScreen = ({ navigation }) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
-        {/* Chat Messages */}
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          renderItem={renderMessage}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.messagesList}
-          showsVerticalScrollIndicator={false}
-          ListFooterComponent={renderTypingIndicator}
-        />
-
-        {/* Quick Replies */}
-        <View style={styles.quickRepliesContainer}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.quickRepliesScroll}
-          >
-            {quickReplies.map((reply) => (
-              <TouchableOpacity
-                key={reply.id}
-                style={styles.quickReplyButton}
-                onPress={() => handleQuickReply(reply.text)}
-              >
-                <Icon name={reply.icon} size={16} color="#FF1493" />
-                <Text style={styles.quickReplyText}>{reply.text}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#FF1493" />
+          </View>
+        ) : (
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            renderItem={renderMessage}
+            keyExtractor={(item) => String(item.id)}
+            contentContainerStyle={styles.messagesList}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={(
+              <View style={styles.emptyContainer}>
+                <View style={styles.emptyIconCircle}>
+                  <Icon name="chatbubbles-outline" size={36} color="#FF1493" />
+                </View>
+                <Text style={styles.emptyText}>
+                  Send us a message and our support team will get back to you.
+                </Text>
+              </View>
+            )}
+          />
+        )}
 
         {/* Input Area */}
         <View style={styles.inputContainer}>
-          <TouchableOpacity style={styles.attachButton}>
-            <Icon name="attach" size={24} color="#FF1493" />
-          </TouchableOpacity>
           <TextInput
             style={styles.input}
             placeholder="Type your message..."
@@ -255,19 +238,23 @@ const ChatSupportScreen = ({ navigation }) => {
             maxLength={500}
           />
           <TouchableOpacity
-            style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
+            style={[styles.sendButton, (!inputText.trim() || sending) && styles.sendButtonDisabled]}
             onPress={handleSendMessage}
-            disabled={!inputText.trim()}
+            disabled={!inputText.trim() || sending}
           >
-            <Icon
-              name="send"
-              size={22}
-              color={inputText.trim() ? '#FF1493' : '#ccc'}
-            />
+            {sending ? (
+              <ActivityIndicator size="small" color="#FF1493" />
+            ) : (
+              <Icon
+                name="send"
+                size={18}
+                color={inputText.trim() ? '#fff' : '#bbb'}
+              />
+            )}
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -276,19 +263,59 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
-  menuButton: {
-    padding: 8,
-  },
   keyboardView: {
     flex: 1,
   },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 80,
+    paddingHorizontal: 40,
+  },
+  emptyIconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#FFF0F5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    marginTop: 16,
+    fontSize: 13.5,
+    color: '#999',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
   messagesList: {
+    flexGrow: 1,
     padding: 16,
     paddingBottom: 8,
   },
+  dateSeparatorContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  dateSeparatorPill: {
+    backgroundColor: '#EFEFEF',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  dateSeparatorText: {
+    fontSize: 11.5,
+    color: '#888',
+    fontWeight: '600',
+  },
   messageContainer: {
     flexDirection: 'row',
-    marginBottom: 16,
+    marginBottom: 14,
     alignItems: 'flex-end',
   },
   supportMessageContainer: {
@@ -323,6 +350,11 @@ const styles = StyleSheet.create({
   userBubble: {
     backgroundColor: '#FF1493',
     borderTopRightRadius: 4,
+    shadowColor: '#FF1493',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   messageText: {
     fontSize: 15,
@@ -336,67 +368,32 @@ const styles = StyleSheet.create({
   },
   timestamp: {
     fontSize: 10,
-    color: '#999',
     marginTop: 4,
     alignSelf: 'flex-end',
   },
-  typingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+  supportTimestamp: {
+    color: '#aaa',
   },
-  typingDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#999',
-    marginHorizontal: 2,
-    opacity: 0.6,
-    animation: 'pulse 1s infinite',
-  },
-  quickRepliesContainer: {
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    paddingVertical: 8,
-  },
-  quickRepliesScroll: {
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  quickReplyButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF0F5',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 8,
-    gap: 8,
-  },
-  quickReplyText: {
-    fontSize: 14,
-    color: '#FF1493',
-    fontWeight: '500',
+  userTimestamp: {
+    color: 'rgba(255,255,255,0.75)',
   },
   inputContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     backgroundColor: '#fff',
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-  },
-  attachButton: {
-    padding: 8,
-    marginRight: 4,
+    paddingVertical: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 6,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 40,
   },
   input: {
     flex: 1,
     backgroundColor: '#F5F5F5',
-    borderRadius: 20,
+    borderRadius: 22,
     paddingHorizontal: 16,
     paddingVertical: 10,
     maxHeight: 100,
@@ -404,18 +401,17 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   sendButton: {
-    padding: 8,
-    marginLeft: 4,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginLeft: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FF1493',
   },
   sendButtonDisabled: {
-    opacity: 0.5,
+    backgroundColor: '#F0F0F0',
   },
 });
-
-// Add animation for typing dots
-const pulseAnimation = {
-  from: { opacity: 0.4 },
-  to: { opacity: 1 },
-};
 
 export default ChatSupportScreen;

@@ -23,6 +23,12 @@ export const getWithdrawalHistory = (page = 1, limit = 10) =>
 export const withdrawWallet = (data) =>
   axiosinstance.post(EndPoints.userWithdrawalRequest, data);
 
+export const getSupportConversation = () =>
+  axiosinstance.get(EndPoints.supportConversation).then((response) => response.data);
+
+export const sendSupportMessage = (message) =>
+  axiosinstance.post(EndPoints.supportSend, { message }).then((response) => response.data);
+
 export default {
   loginService,
   signupService,
@@ -31,4 +37,6 @@ export default {
   getRechargeHistory,
   getWithdrawalHistory,
   withdrawWallet,
+  getSupportConversation,
+  sendSupportMessage,
 };
