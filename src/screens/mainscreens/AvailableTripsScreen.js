@@ -307,6 +307,9 @@ const handleDateChange = (event, date) => {
             <View style={{ alignItems: 'flex-end' }}>
               <Text style={styles.fullFareLabel}>Full Fare</Text>
               <Text style={styles.fullFare}>₹{item.full_fare}</Text>
+              {(parseFloat(item.platform_fee) > 0 || parseFloat(item.access_fee) > 0) && (
+                <Text style={styles.feeIncludedNote}>incl. fees</Text>
+              )}
             </View>
           </View>
         </View>
@@ -925,6 +928,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#666',
+  },
+  feeIncludedNote: {
+    fontSize: 9,
+    color: '#aaa',
+    marginTop: 2,
   },
   selectButton: {
     flexDirection: 'row',

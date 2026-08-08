@@ -402,12 +402,12 @@ const SelfSharingBookingScreen = ({ navigation, route }) => {
 
           <View style={styles.savingsBox}>
             <FontAwesome5 name="tag" size={14} color="#4CAF50" />
-            <View style={{ marginLeft: 8, flex: 1 }}>
+            {/* <View style={{ marginLeft: 8, flex: 1 }}>
               <Text style={styles.savingsLabel}>You Save</Text>
               <Text style={styles.savingsValue}>
                 ₹{savings.toFixed(2)} ({savingsPercentage}% off full fare)
               </Text>
-            </View>
+            </View> */}
           </View>
 
           <View style={styles.infoBox}>
