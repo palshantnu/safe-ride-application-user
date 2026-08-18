@@ -498,6 +498,14 @@ const OnSpotBookings = ({ navigation }) => {
             </View>
           )}
 
+          {/* Started At (once service has begun) */}
+          {(status === 'STARTED' || status === 'COMPLETED') && booking.started_at && (
+            <View style={styles.completedInfo}>
+              <Icon name="play-circle-outline" size={18} color="#FF5722" />
+              <Text style={styles.completedText}>Started: {formatDate(booking.started_at)}</Text>
+            </View>
+          )}
+
           {/* Completed At (if completed) */}
           {status === 'COMPLETED' && booking.completed_at && (
             <View style={styles.completedInfo}>

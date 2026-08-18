@@ -68,6 +68,8 @@ const UserHistoryScreen = ({ navigation }) => {
         distance: parseFloat(booking.actual_distance || booking.distance || 0),
         duration: null,
         person: booking.person,
+        rideStartedAt: booking.ride_started_at || null,
+        rideCompletedAt: booking.ride_completed_at || null,
         topups: [],
         topupAmount: 0,
         rating: booking.user_rating || 0,
@@ -115,6 +117,8 @@ review: booking.user_review || '',
       meter_images: booking.meter_images || [],
       created_at: booking.created_at,
       isInCity: false,
+      rideStartedAt: booking.ride_started_at || null,
+      rideCompletedAt: booking.ride_completed_at || null,
        platform_fee: parseFloat(booking.platform_fee || 0),
       access_fee: parseFloat(booking.access_fee || 0),
     };
@@ -207,6 +211,18 @@ review: booking.user_review || '',
   const formatTime = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  };
+
+  const formatDateTime = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
       hour12: true,
@@ -316,6 +332,23 @@ review: booking.user_review || '',
           </View>
         </View>
       ) : null}
+
+      {(item.rideStartedAt || item.rideCompletedAt) && (
+        <View style={styles.rideTimingRow}>
+          {item.rideStartedAt && (
+            <View style={styles.statItem}>
+              <Icon name="play-circle-outline" size={14} color="#4CAF50" />
+              <Text style={styles.statItemText}>Started: {formatDateTime(item.rideStartedAt)}</Text>
+            </View>
+          )}
+          {item.rideCompletedAt && (
+            <View style={styles.statItem}>
+              <Icon name="flag-outline" size={14} color="#FF1493" />
+              <Text style={styles.statItemText}>Finished: {formatDateTime(item.rideCompletedAt)}</Text>
+            </View>
+          )}
+        </View>
+      )}
 
       <View style={styles.divider} />
 
@@ -591,6 +624,13 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#f0f0f0',
     marginVertical: 12,
+  },
+  rideTimingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 16,
+    marginBottom: 4,
   },
   rideFooter: {
     flexDirection: 'row',

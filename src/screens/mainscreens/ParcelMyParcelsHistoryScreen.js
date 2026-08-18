@@ -179,6 +179,19 @@ console.log('GET_MY_PARCELS response', res);
     return `${formattedDate}${formattedTime ? ` • ${formattedTime}` : ''}`;
   };
 
+  const formatTimestamp = (dateString) => {
+    if (!dateString) return '-';
+    const d = new Date(dateString);
+    return d.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  };
+
   // Open Razorpay payment gateway
   const openRazorpay = (amount, orderId, onSuccess, onFailure) => {
     const options = {
@@ -634,6 +647,23 @@ console.log('parcel_booking_id', item?.parcel_booking_id,'user_status', user_sta
           </View>}
 </>}
         
+
+        {(item?.pickup_otp_verified_at || item?.delivered_at) && (
+          <View style={styles.detailsRow}>
+            {item?.pickup_otp_verified_at ? (
+              <View style={styles.detailItem}>
+                <Icon name="play-circle-outline" size={12} color="#4CAF50" />
+                <Text style={styles.detailText}>Picked up: {formatTimestamp(item.pickup_otp_verified_at)}</Text>
+              </View>
+            ) : null}
+            {item?.delivered_at ? (
+              <View style={styles.detailItem}>
+                <Icon name="flag-outline" size={12} color="#FF1493" />
+                <Text style={styles.detailText}>Delivered: {formatTimestamp(item.delivered_at)}</Text>
+              </View>
+            ) : null}
+          </View>
+        )}
 
         {item?.remarks ? (
           <View style={styles.remarksContainer}>

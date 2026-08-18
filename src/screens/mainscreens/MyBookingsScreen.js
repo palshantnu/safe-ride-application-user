@@ -341,6 +341,34 @@ if (res?.status && Array.isArray(res.data)) {
           </View>
         ) : null}
 
+        {/* Trip Start/Finish */}
+        {(item.ride_started_at || item.ride_completed_at) && (
+          <View style={styles.detailsContainer}>
+            {item.ride_started_at && (
+              <View style={styles.detailItem}>
+                <Icon name="play-circle" size={14} color="#4CAF50" />
+                <Text style={styles.detailLabel}>Started</Text>
+                <Text style={styles.detailValue}>
+                  {new Date(item.ride_started_at).toLocaleString('en-IN', {
+                    day: '2-digit', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true,
+                  })}
+                </Text>
+              </View>
+            )}
+            {item.ride_completed_at && (
+              <View style={styles.detailItem}>
+                <Icon name="flag" size={14} color="#FF1493" />
+                <Text style={styles.detailLabel}>Finished</Text>
+                <Text style={styles.detailValue}>
+                  {new Date(item.ride_completed_at).toLocaleString('en-IN', {
+                    day: '2-digit', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true,
+                  })}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
         {/* Pickup Address */}
         {item.pickup_address && (
           <View style={styles.pickupSection}>
