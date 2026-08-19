@@ -19,6 +19,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import RazorpayCheckout from 'react-native-razorpay';
 import CurvedHeader from '../../components/CurvedHeader';
+import { stopNotificationSound } from '../../utils/notificationRing';
 import {
   CANCEL_SELF_SHARING_BOOKING,
   PAY_FULL_BALANCE,
@@ -176,9 +177,10 @@ const SelfSharingBookingDetailsScreen = ({ route, navigation }) => {
       );
 
       if (res?.status) {
+        stopNotificationSound();
         Alert.alert('Success', 'Balance payment completed successfully');
         setShowPaymentModal(false);
-        
+
         // Update local booking status
         const updatedBooking = { 
           ...booking, 

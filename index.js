@@ -16,7 +16,7 @@ import { playNotificationSound, stopNotificationSound } from './src/utils/notifi
 messaging().setBackgroundMessageHandler(async remoteMessage => {
   console.log('FCM Notification (background/quit):', remoteMessage);
 
-  if (remoteMessage?.data?.type === 'BOOKING_ARRIVED') {
+  if (remoteMessage?.data?.type === 'BOOKING_ARRIVED' || remoteMessage?.data?.type === 'SIGI_TRIP_ARRIVED') {
     playNotificationSound();
   }
 

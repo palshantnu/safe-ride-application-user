@@ -21,6 +21,7 @@ import Icon from 'react-native-vector-icons/Feather';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import RazorpayCheckout from 'react-native-razorpay';
 import { useDispatch, useSelector } from 'react-redux';
+import { stopNotificationSound } from '../../utils/notificationRing';
 import {
   GET_SELF_SHARING_BOOKINGS,
   CANCEL_SELF_SHARING_BOOKING,
@@ -210,6 +211,7 @@ if (res?.status && Array.isArray(res.data)) {
       );
 
       if (res?.status) {
+        stopNotificationSound();
         Alert.alert('Success', 'Balance payment completed successfully');
         setShowPaymentModal(false);
         setSelectedBooking(null);
