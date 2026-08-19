@@ -7,12 +7,22 @@ import { AppRegistry } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
 import App from './App';
 import { name as appName } from './app.json';
+import { playNotificationSound, stopNotificationSound } from './src/utils/notificationRing';
 
-// Required so RNFirebase doesn't warn about a missing handler. The OS already
-// shows the system tray notification for background/killed apps on its own;
-// in-app handling for opened-via-notification happens in App.tsx.
+// The OS already shows the system tray notification for background/killed
+// apps on its own; in-app handling for opened-via-notification happens in
+// App.tsx. This handler additionally starts/stops the BOOKING_ARRIVED ring
+// so it plays even while the app is backgrounded or fully killed.
 messaging().setBackgroundMessageHandler(async remoteMessage => {
   console.log('FCM Notification (background/quit):', remoteMessage);
+
+  if (remoteMessage?.data?.type === 'BOOKING_ARRIVED') {
+    playNotificationSound();
+  }
+
+  if (remoteMessage?.data?.type === 'BOOKING_CANCELLED') {
+    stopNotificationSound();
+  }
 });
 
 AppRegistry.registerComponent(appName, () => App);
