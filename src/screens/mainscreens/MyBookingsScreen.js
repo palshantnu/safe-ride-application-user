@@ -239,8 +239,19 @@ if (res?.status && Array.isArray(res.data)) {
     return colors[status] || '#757575';
   };
 
+  const cancelledByLabel = (cancelledBy) => {
+    if (cancelledBy === 'DRIVER_NO_SHOW') return 'Cancelled by captain (marked as no-show)';
+    if (cancelledBy === 'DRIVER') return 'Trip cancelled by captain';
+    if (cancelledBy === 'USER') return 'Cancelled by you';
+    return 'Cancelled';
+  };
+
   const renderBookingCard = ({ item }) => {
-    const status = item.trip_status || 'CONFIRMED';
+    // item.status is this passenger's OWN booking status — it must win over the trip's
+    // status, otherwise a booking the captain cancelled (no-show) while the trip kept
+    // going for everyone else would show the trip's live status (e.g. BOARDING) instead
+    // of CANCELLED here.
+    const status = item.status === 'CANCELLED' ? 'CANCELLED' : (item.trip_status || 'CONFIRMED');
     const statusColor = getStatusColor(status);
     const bookingDate = new Date(item.created_at).toLocaleDateString('en-IN', {
       day: 'numeric',
@@ -283,6 +294,15 @@ if (res?.status && Array.isArray(res.data)) {
             <Text style={styles.statusText}>{status}</Text>
           </View>
         </View>
+
+        {status === 'CANCELLED' && (
+          <View style={styles.cancelledInfoBox}>
+            <Text style={styles.cancelledInfoText}>{cancelledByLabel(item.cancelled_by)}</Text>
+            {item.cancel_reason ? (
+              <Text style={styles.cancelledInfoReason}>Reason: {item.cancel_reason}</Text>
+            ) : null}
+          </View>
+        )}
 
         {/* Route */}
         <View style={styles.routeSection}>
@@ -538,7 +558,8 @@ if (res?.status && Array.isArray(res.data)) {
     (
       ['COMPLETED', 'CANCELLED'].includes(booking.status) ||
       ['COMPLETED', 'CANCELLED'].includes(booking.trip_status)
-    ) &&
+    ) 
+    &&
     booking.rating_status === 'FINISHED';
 
   return activeTab === 'active' ? !isPast : isPast;
@@ -836,6 +857,23 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 11,
     fontWeight: '600',
+  },
+  cancelledInfoBox: {
+    backgroundColor: '#FFEBEE',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginTop: 8,
+  },
+  cancelledInfoText: {
+    color: '#F44336',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  cancelledInfoReason: {
+    color: '#B71C1C',
+    fontSize: 12,
+    marginTop: 2,
   },
   routeSection: {
     flexDirection: 'row',

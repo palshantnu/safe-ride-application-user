@@ -59,6 +59,13 @@ const SelfSharingBookingDetailsScreen = ({ route, navigation }) => {
     return colors[status] || '#757575';
   };
 
+  const cancelledByLabel = (cancelledBy) => {
+    if (cancelledBy === 'DRIVER_NO_SHOW') return 'Cancelled by captain (marked as no-show)';
+    if (cancelledBy === 'DRIVER') return 'Trip cancelled by captain';
+    if (cancelledBy === 'USER') return 'Cancelled by you';
+    return 'Cancelled';
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -230,6 +237,30 @@ const SelfSharingBookingDetailsScreen = ({ route, navigation }) => {
             </View>
           </View>
         </View>
+
+        {/* Cancellation Details Card */}
+        {booking.status === 'CANCELLED' && (
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Icon name="x-circle" size={18} color="#F44336" />
+              <Text style={styles.cardTitle}>Cancellation Details</Text>
+            </View>
+            <View style={styles.billRow}>
+              <Text style={styles.billLabel}>Cancelled By</Text>
+              <Text style={styles.billValue}>{cancelledByLabel(booking.cancelled_by)}</Text>
+            </View>
+            {booking.cancel_reason ? (
+              <View style={styles.billRow}>
+                <Text style={styles.billLabel}>Reason</Text>
+                <Text style={styles.billValue}>{booking.cancel_reason}</Text>
+              </View>
+            ) : null}
+            <View style={styles.billRow}>
+              <Text style={styles.billLabel}>Cancellation Charge</Text>
+              <Text style={styles.billValue}>₹{booking.cancellation_fee || 0}</Text>
+            </View>
+          </View>
+        )}
 
         {/* OTP Prominent Box */}
         {booking.otp && booking.balance_paid === 1 && booking.status === 'CONFIRMED' ? (
@@ -740,6 +771,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#333',
+    width:'50%'
   },
   paymentStatusBadgeRow: {
     flexDirection: 'row',
