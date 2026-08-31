@@ -1311,6 +1311,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Dropdown } from 'react-native-element-dropdown';
 import axios from 'axios';
+import Geolocation from '@react-native-community/geolocation';
 
 import CurvedHeader from '../../components/CurvedHeader';
 import {
@@ -1393,6 +1394,22 @@ const detailsSectionY = useRef(0);
   const [loadingUnloading, setLoadingUnloading] = useState('Captain End');
 
   const [remarks, setRemarks] = useState('');
+
+  // Pickup coordinates, captured silently so captains' "Search Area" radius (set per
+  // vehicle type in admin) can actually filter parcel pickups by distance — same as In-City.
+  const [pickupLat, setPickupLat] = useState(null);
+  const [pickupLng, setPickupLng] = useState(null);
+
+  useEffect(() => {
+    Geolocation.getCurrentPosition(
+      (position) => {
+        setPickupLat(position.coords.latitude);
+        setPickupLng(position.coords.longitude);
+      },
+      () => {},
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+    );
+  }, []);
 
   // Fetch cities on component mount
   useEffect(() => {
@@ -1574,6 +1591,8 @@ useEffect(() => {
       pickup_time: formatTimeOnly(pickupTime),
       pickup_address: pickupAddress,
       pickup_landmark: pickupLandmark,
+      pickup_lat: pickupLat != null ? String(pickupLat) : undefined,
+      pickup_lng: pickupLng != null ? String(pickupLng) : undefined,
 
       drop_city: dropCity,
       drop_city_id: dropCityId,

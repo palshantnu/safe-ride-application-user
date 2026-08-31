@@ -1485,6 +1485,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Dropdown } from 'react-native-element-dropdown';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Geolocation from '@react-native-community/geolocation';
 import {
   CREATE_BOOKING,
   GET_PLANS,
@@ -1559,6 +1560,22 @@ const detailsSectionY = useRef(0);
   const [fullAddress, setFullAddress] = useState('');
   const [landmark, setLandmark] = useState('');
   const [remarks, setRemarks] = useState('');
+
+  // Pickup coordinates, captured silently so drivers' "Search Area" radius (set per
+  // vehicle type in admin) can actually filter these bookings by distance — same as In-City.
+  const [pickupLat, setPickupLat] = useState(null);
+  const [pickupLng, setPickupLng] = useState(null);
+
+  useEffect(() => {
+    Geolocation.getCurrentPosition(
+      (position) => {
+        setPickupLat(position.coords.latitude);
+        setPickupLng(position.coords.longitude);
+      },
+      () => {},
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+    );
+  }, []);
 
   // Fetch cities on component mount
   useEffect(() => {
@@ -1762,6 +1779,8 @@ useEffect(() => {
         full_address: fullAddress,
         landmark,
         remarks,
+        pickup_lat: pickupLat != null ? String(pickupLat) : undefined,
+        pickup_lng: pickupLng != null ? String(pickupLng) : undefined,
       };
 
       console.log('OnSpot Booking', bookingData);
@@ -1779,6 +1798,8 @@ useEffect(() => {
       person,
       plan_id: selectedPlan.id,
       schedule_date: scheduleDate.toISOString(),
+      pickup_lat: pickupLat != null ? String(pickupLat) : undefined,
+      pickup_lng: pickupLng != null ? String(pickupLng) : undefined,
     };
     console.log('bookingData-->', bookingData);
     dispatch(CREATE_BOOKING(bookingData));
