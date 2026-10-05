@@ -10,6 +10,7 @@ import { promptForEnableLocationIfNeeded } from 'react-native-android-location-e
 import { request as requestPermission, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import messaging from '@react-native-firebase/messaging';
 import { playNotificationSound, stopNotificationSound } from './src/utils/notificationRing';
+import RingMuteButton from './src/components/RingMuteButton';
 
 const App = () => {
 const requestLocationPermission = async () => {
@@ -124,6 +125,7 @@ useEffect(() => {
           <ForceUpdateGate>
             <AppNavigator />
           </ForceUpdateGate>
+          <RingMuteButton />
           </SafeAreaView>
         </SafeAreaProvider>
       </PersistGate>
