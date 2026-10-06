@@ -12,6 +12,7 @@ import {
   Modal,
   TextInput,
   Image,
+  Linking,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
@@ -23,6 +24,7 @@ import { stopNotificationSound } from '../../utils/notificationRing';
 import CurvedHeader from '../../components/CurvedHeader';
 import {
   GET_MY_PARCELS,
+  GET_CURRENT_PARCEL_BOOKINGS,
   PAY_PARCEL_TOKEN,
   PAY_PARCEL_BALANCE,
   CANCEL_PARCEL_BOOKING,
@@ -77,9 +79,29 @@ const ParcelMyParcelsHistoryScreen = ({ navigation }) => {
       }
 
       const nextPage = loadMore ? page : 1;
-      const res = await dispatch(GET_MY_PARCELS(nextPage, limit));
+      // my-bookings may not carry captain details (older API) — current-booking
+      // does for active parcels, so fill them in from there.
+      const [res, currentRes] = await Promise.all([
+        dispatch(GET_MY_PARCELS(nextPage, limit)),
+        dispatch(GET_CURRENT_PARCEL_BOOKINGS()),
+      ]);
 console.log('GET_MY_PARCELS response', res);
-      const list = Array.isArray(res?.data) ? res.data : [];
+      const current = Array.isArray(currentRes?.data) ? currentRes.data : [];
+      const list = (Array.isArray(res?.data) ? res.data : []).map((parcel) => {
+        if (parcel?.driver_name) return parcel;
+        const match = current.find((c) => c?.parcel_booking_id === parcel?.parcel_booking_id);
+        if (!match?.driver_name) return parcel;
+        return {
+          ...parcel,
+          driver_name: match.driver_name,
+          driver_phone: match.driver_phone || match.driver_mobile,
+          driver_profile: match.driver_profile,
+          vehicle_type: match.vehicle_type,
+          vehicle_model: match.vehicle_model,
+          vehicle_color: match.vehicle_color,
+          vehicle_number: match.vehicle_number,
+        };
+      });
       const pagination = res?.pagination || {};
       const totalPages = pagination?.total_pages;
 
@@ -446,7 +468,7 @@ console.log('isDelivered', isDelivered,'isCancelled',isCancelled);
     const drop = item?.drop_address || item?.drop_city;
     const weight = item?.approx_weight ?? item?.weight;
     const balance_paid = item?.balance_paid;
-console.log('parcel_booking_id', item?.parcel_booking_id,'user_status', user_status,'balance_paid', balance_paid);
+// console.log('parcel_booking_id', item);
     const showPayToken = user_status != 'TOKEN_PAID' && statusLower != 'pending';
     const showPayBalance =  balance_paid == 0  && user_status == 'TOKEN_PAID' && statusLower != 'pending';
     const pickup_otp_verified = pickup_otp_verified == 0;
@@ -454,6 +476,16 @@ console.log('parcel_booking_id', item?.parcel_booking_id,'user_status', user_sta
     const tokenAmount = parseFloat(item?.token_amount || item?.amount || 0);
     const balanceAmount = parseFloat(item?.balance_amount || item?.amount || 0);
     const totalAmount = parseFloat(item?.amount || 0);
+    const userRating = Number(item?.user_rating) || 0;
+    // Captain details: only while the parcel is active and once the token is paid
+    // (the API also withholds them until then).
+    const tokenPaid = Number(item?.paid) === 1 || user_status == 'TOKEN_PAID';
+    const showDriverInfo = !isDelivered && !isCancelled && tokenPaid && !!item?.driver_name;
+    console.log('showDriverInfo', showDriverInfo, 'tokenPaid', tokenPaid, 'driver_name', item?.driver_name);
+    const driverPhone = item?.driver_phone || item?.driver_mobile;
+    const vehicleText = [item?.vehicle_type, item?.vehicle_model, item?.vehicle_color, item?.vehicle_number]
+      .filter(Boolean)
+      .join(' • ');
 
     return (
       <View style={styles.card}>
@@ -535,6 +567,35 @@ console.log('parcel_booking_id', item?.parcel_booking_id,'user_status', user_sta
             <Text style={styles.balanceAmount}>₹{Math.ceil(balanceAmount)}</Text>
           </View>
         </View>
+        {showDriverInfo && (
+          <View style={styles.driverCard}>
+            <View style={styles.driverAvatar}>
+              {item?.driver_profile ? (
+                <Image
+                  source={{ uri: `https://sigiride.com/uploads/driver_profiles/${item.driver_profile}` }}
+                  style={styles.driverProfileImage}
+                />
+              ) : (
+                <FontAwesome5 name="user-circle" size={30} color="#FF1493" />
+              )}
+            </View>
+            <View style={styles.driverMeta}>
+              <Text style={styles.driverLabel}>Your Captain</Text>
+              <Text style={styles.driverName}>{item.driver_name}</Text>
+              {driverPhone ? <Text style={styles.driverPhone}>{driverPhone}</Text> : null}
+              {vehicleText ? <Text style={styles.driverVehicle}>{vehicleText}</Text> : null}
+            </View>
+            {driverPhone ? (
+              <TouchableOpacity
+                style={styles.callBtn}
+                onPress={() => Linking.openURL(`tel:${driverPhone}`)}
+                activeOpacity={0.9}
+              >
+                <Icon name="call" size={18} color="#fff" />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        )}
 {(!isDelivered && !isCancelled) &&  <>
         {(showPayToken || showPayBalance) && (
           <View style={styles.actionBlock}>
@@ -664,6 +725,27 @@ console.log('parcel_booking_id', item?.parcel_booking_id,'user_status', user_sta
             ) : null}
           </View>
         )}
+
+        {userRating > 0 ? (
+          <View style={styles.ratingContainer}>
+            <View style={styles.ratingHeader}>
+              <Text style={styles.ratingLabel}>Your Rating</Text>
+              <View style={styles.ratingStars}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Icon
+                    key={star}
+                    name={star <= userRating ? 'star' : 'star-outline'}
+                    size={16}
+                    color="#FFB300"
+                  />
+                ))}
+              </View>
+            </View>
+            {item?.user_review ? (
+              <Text style={styles.ratingReview}>{item.user_review}</Text>
+            ) : null}
+          </View>
+        ) : null}
 
         {item?.remarks ? (
           <View style={styles.remarksContainer}>
@@ -908,7 +990,7 @@ const styles = StyleSheet.create({
   },
 
   detailsRow: {
-    flexDirection: 'row',
+    // flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 8,
     marginBottom: 4,
@@ -917,6 +999,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    marginTop:10
   },
   detailText: {
     fontSize: 11,
@@ -954,6 +1037,86 @@ const styles = StyleSheet.create({
   },
   amountItem: {
     alignItems: 'center',
+  },
+  ratingContainer: {
+    marginTop: 10,
+    padding: 10,
+    borderRadius: 10,
+    backgroundColor: '#FFF8E1',
+  },
+  ratingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  ratingLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#555',
+  },
+  ratingStars: {
+    flexDirection: 'row',
+    gap: 2,
+  },
+  ratingReview: {
+    marginTop: 6,
+    fontSize: 13,
+    color: '#333',
+  },
+  driverCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9F9F9',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    marginTop: 10,
+  },
+  driverAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFF0F7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+    overflow: 'hidden',
+  },
+  driverProfileImage: {
+    width: 44,
+    height: 44,
+  },
+  driverMeta: {
+    flex: 1,
+  },
+  driverLabel: {
+    fontSize: 10,
+    color: '#888',
+  },
+  driverName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#222',
+  },
+  driverPhone: {
+    fontSize: 12,
+    color: '#4CAF50',
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  driverVehicle: {
+    fontSize: 12,
+    color: '#555',
+    marginTop: 2,
+  },
+  callBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#4CAF50',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   amountLabel: {
     fontSize: 10,

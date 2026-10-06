@@ -177,12 +177,15 @@ const HomeScreen = ({ navigation }) => {
   }, [activeBookings, shownRatings]);
 
   // Safety net for the BOOKING_ARRIVED ring (started from the push in App.tsx):
-  // silence it if there's no non-In City ride still waiting on Pay Remaining /
-  // Cancel. Does NOT start the ring — only stops it (e.g. when the arrived
-  // booking turns out to be a plain In City ride, which never rings).
+  // silence it if there's no non-In City ride (or parcel with the captain at
+  // pickup) still waiting on Pay Remaining / Cancel. Does NOT start the ring —
+  // only stops it (e.g. when the arrived booking turns out to be a plain
+  // In City ride, which never rings).
   useEffect(() => {
     const hasUnactionedArrival = activeBookings.some(
-      (b) => b.__bookingType === BOOKING_TYPE.RIDE && !b.is_incity && b.status === 'ARRIVED'
+      (b) =>
+        (b.__bookingType === BOOKING_TYPE.RIDE && !b.is_incity && b.status === 'ARRIVED') ||
+        (b.__bookingType === BOOKING_TYPE.PARCEL && b.status === 'pickup_reached')
     );
     if (!hasUnactionedArrival) {
       stopNotificationSound();
@@ -1235,6 +1238,12 @@ console.log('vehicleTitle',vehicleTitle)
     const showPickupOtp = Number(booking?.pickup_otp_verified) === 0;
     const otp = showPickupOtp ? booking?.pickup_otp : booking?.delivery_otp;
     const otpLabel = showPickupOtp ? 'Pickup OTP' : 'Delivery OTP';
+    // Captain details are only sent by the API once the token is paid.
+    const showDriverInfo = Number(booking?.paid) === 1 && !!booking?.driver_name;
+    const driverPhone = booking?.driver_phone || booking?.driver_mobile;
+    const vehicleTitle = joinLocationParts(booking?.vehicle_type, booking?.vehicle_model);
+    const vehicleMeta = joinLocationParts(booking?.vehicle_color, booking?.vehicle_number);
+    const driverProfileImageUri = getDriverProfileImageUri(booking?.driver_profile);
 
     console.log('renderActiveParcelBooking booking:', booking);
 
@@ -1328,6 +1337,54 @@ console.log('vehicleTitle',vehicleTitle)
             </View>
           </View>
         </View>
+
+        {showDriverInfo && (
+          <View style={styles.driverCard}>
+            <View style={styles.driverRow}>
+              <View style={styles.driverAvatar}>
+                {driverProfileImageUri ? (
+                  <Image
+                    source={{ uri: driverProfileImageUri }}
+                    style={styles.driverProfileImage}
+                  />
+                ) : (
+                  <FontAwesome5 name="user-circle" size={36} color="#FF1493" />
+                )}
+              </View>
+              <View style={styles.driverMeta}>
+                <Text style={styles.driverName}>{booking.driver_name}</Text>
+                {driverPhone ? (
+                  <TouchableOpacity style={styles.callRow} onPress={() => Linking.openURL(`tel:${driverPhone}`)}>
+                    <Icon name="phone" size={14} color="#4CAF50" />
+                    <Text style={styles.driverPhone}>{driverPhone}</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+              {driverPhone ? (
+                <TouchableOpacity style={styles.callBtn} onPress={() => Linking.openURL(`tel:${driverPhone}`)}>
+                  <Icon name="phone-call" size={20} color="#fff" />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+
+            {(vehicleTitle || vehicleMeta) ? (
+              <View style={styles.vehicleInfo}>
+                {vehicleTitle ? (
+                  <View style={styles.vehicleInfoRow}>
+                    <FontAwesome5 name="car-side" size={14} color="#666" />
+                    <Text style={styles.vehicleInfoText}>{vehicleTitle}</Text>
+                  </View>
+                ) : null}
+                {vehicleMeta ? (
+                  <View style={styles.vehicleInfoRow}>
+                    <Icon name="info" size={14} color="#666" />
+                    <Text style={styles.vehicleInfoText}>{vehicleMeta}</Text>
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
+          </View>
+        )}
 
         {otp && (status =='pickup_reached' || status == 'picked_up') && booking.balance_paid == 1 ? (
           <View style={styles.otpHorizontalContainer}>

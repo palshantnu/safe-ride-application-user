@@ -38,8 +38,8 @@ useEffect(() => {
     console.log('FCM Notification (foreground/opened):', remoteMessage);
     console.log('FCM data.type:', JSON.stringify(remoteMessage?.data?.type));
 
-    if (remoteMessage?.data?.type === 'BOOKING_ARRIVED' || remoteMessage?.data?.type === 'SIGI_TRIP_ARRIVED') {
-      console.log('BOOKING_ARRIVED/SIGI_TRIP_ARRIVED matched, calling playNotificationSound()');
+    if (['BOOKING_ARRIVED', 'SIGI_TRIP_ARRIVED', 'PARCEL_ARRIVED'].includes(remoteMessage?.data?.type)) {
+      console.log('ARRIVED push matched, calling playNotificationSound()');
       playNotificationSound();
     }
 
