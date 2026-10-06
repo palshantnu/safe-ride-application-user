@@ -177,7 +177,7 @@ const HomeScreen = ({ navigation }) => {
   }, [activeBookings, shownRatings]);
 
   // Safety net for the BOOKING_ARRIVED ring (started from the push in App.tsx):
-  // silence it if there's no non-In City ride (or parcel with the captain at
+  // silence it if there's no non-In City ride (or parcel / on-spot booking with the captain at
   // pickup) still waiting on Pay Remaining / Cancel. Does NOT start the ring —
   // only stops it (e.g. when the arrived booking turns out to be a plain
   // In City ride, which never rings).
@@ -185,7 +185,8 @@ const HomeScreen = ({ navigation }) => {
     const hasUnactionedArrival = activeBookings.some(
       (b) =>
         (b.__bookingType === BOOKING_TYPE.RIDE && !b.is_incity && b.status === 'ARRIVED') ||
-        (b.__bookingType === BOOKING_TYPE.PARCEL && b.status === 'pickup_reached')
+        (b.__bookingType === BOOKING_TYPE.PARCEL && b.status === 'pickup_reached') ||
+        (b.__bookingType === BOOKING_TYPE.ON_SPOT && b.status === 'ARRIVED')
     );
     if (!hasUnactionedArrival) {
       stopNotificationSound();

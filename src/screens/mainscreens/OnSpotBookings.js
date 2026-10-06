@@ -424,7 +424,7 @@ const OnSpotBookings = ({ navigation }) => {
           {/* Price Breakdown */}
           <View style={styles.priceContainer}>
            <View style={styles.priceItem}>
-              <Text style={styles.priceLabel}>Balance</Text>
+              <Text style={styles.priceLabel}>{status == 'COMPLETED' ? 'Balance Paid' : 'Balance'}</Text>
               <Text style={styles.balanceAmount}>₹{parseFloat(booking.balance_amount).toFixed(2)}</Text>
             </View>
             <View style={styles.priceItem}>
@@ -513,6 +513,28 @@ const OnSpotBookings = ({ navigation }) => {
               <Text style={styles.completedText}>Completed: {formatDate(booking.completed_at)}</Text>
             </View>
           )}
+
+          {/* Your rating & review (once rated) */}
+          {Number(booking.user_rating) > 0 && (
+            <View style={styles.ratingContainer}>
+              <View style={styles.ratingHeader}>
+                <Text style={styles.ratingLabel}>Your Rating</Text>
+                <View style={styles.ratingStars}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Icon
+                      key={star}
+                      name={star <= Number(booking.user_rating) ? 'star' : 'star-outline'}
+                      size={16}
+                      color="#FFB300"
+                    />
+                  ))}
+                </View>
+              </View>
+              {booking.user_review ? (
+                <Text style={styles.ratingReview}>{booking.user_review}</Text>
+              ) : null}
+            </View>
+          )}
         </View>
 {console.log('status===>',status)}
         {/* Action Buttons for Current Bookings */}
@@ -560,6 +582,18 @@ const OnSpotBookings = ({ navigation }) => {
                   <Text style={styles.actionButtonText}>Cancel</Text>
                 </TouchableOpacity>
               </>
+            )}
+
+            {/* Token paid, waiting for the service man to arrive — can still cancel */}
+            {!['PENDING', 'ASSIGNED', 'ARRIVED', 'STARTED', 'IN_PROGRESS'].includes(status) && (
+              <TouchableOpacity
+                style={[styles.actionButton, styles.cancelButton]}
+                onPress={() => handleCancelBooking(booking)}
+                disabled={isLoading}
+              >
+                <Icon name="close-outline" size={18} color="#fff" />
+                <Text style={styles.actionButtonText}>Cancel</Text>
+              </TouchableOpacity>
             )}
 
             {status === 'STARTED' && (
@@ -1159,6 +1193,31 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     color: '#4CAF50',
+  },
+  ratingContainer: {
+    marginTop: 8,
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: '#FFF8E1',
+  },
+  ratingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  ratingLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#555',
+  },
+  ratingStars: {
+    flexDirection: 'row',
+    gap: 2,
+  },
+  ratingReview: {
+    marginTop: 6,
+    fontSize: 13,
+    color: '#333',
   },
   cardFooter: {
     flexDirection: 'row',
