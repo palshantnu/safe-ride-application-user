@@ -555,7 +555,7 @@ console.log('isDelivered', isDelivered,'isCancelled',isCancelled);
 
         <View style={styles.amountRow}>
           <View style={styles.amountItem}>
-            <Text style={styles.amountLabel}>Total Amount</Text>
+            <Text style={styles.amountLabel}>{isDelivered? 'Paid Amount' : 'Total Amount'}</Text>
             <Text style={styles.amountValue}>₹{Math.ceil(totalAmount)}</Text>
           </View>
           <View style={styles.amountItem}>
