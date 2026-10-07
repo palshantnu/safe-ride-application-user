@@ -499,6 +499,12 @@ console.log('isDelivered', isDelivered,'isCancelled',isCancelled);
           </View>
         </View>
 
+        {item?.service_name ? (
+          <Text style={{ fontSize: 13, fontWeight: '700', color: '#810a45', marginBottom: 6 }}>
+            Service: {item?.service_name}
+          </Text>
+        ) : null}
+
         <View style={styles.routeRow}>
           <View style={styles.routeCol}>
             <View style={styles.pickupDot} />

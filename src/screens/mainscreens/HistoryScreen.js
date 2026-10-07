@@ -58,6 +58,7 @@ const UserHistoryScreen = ({ navigation }) => {
         booking_id: booking.booking_id,
         rating: booking.user_rating || 0,
   review: booking.user_review || '',
+        service_name: booking.service_name || 'In City',
         pickup: booking.pickup_address || booking.pickup_city,
         destination: booking.drop_address || booking.drop_city,
         price: fare,
@@ -286,6 +287,12 @@ review: booking.user_review || '',
           </View>
         </View>
       </View>
+
+      {item.service_name ? (
+        <Text style={{ fontSize: 13, fontWeight: '700', color: '#810a45', marginBottom: 6 }}>
+          Service: {item.service_name}
+        </Text>
+      ) : null}
 
       <View style={styles.rideLocation}>
         <View style={styles.locationPoint}>

@@ -1019,7 +1019,7 @@ const secureProfileImage = profileImageUri.replace('http://', 'https://');
     const isInCityBooking = booking?.is_incity;
     const showDriverInfo = isInCityBooking
       ? booking?.driver_name
-      : ['TOKEN_PAID', 'ARRIVED', 'STARTED'].includes(statusKey);
+      : ['TOKEN_PAID', 'ASSIGN', 'ARRIVED', 'STARTED'].includes(statusKey);
       
     const showOtp =  statusKey === 'BALANCE_PAID';
     // const vehicleTitle = booking?.vehicle_type;
@@ -1177,6 +1177,9 @@ console.log('vehicleTitle',vehicleTitle)
               </View>
               <View style={styles.driverMeta}>
                 <Text style={styles.driverName}>{booking.driver_name}</Text>
+                {booking?.contact_type === 'BA' ? (
+                  <Text style={{ fontSize: 11, color: '#888', marginTop: 2 }}>Business Associate — driver will be assigned soon</Text>
+                ) : null}
                 {booking?.driver_mobile ? (
                   <TouchableOpacity style={styles.callRow} onPress={() => Linking.openURL(`tel:${booking.driver_mobile}`)}>
                     <Icon name="phone" size={14} color="#4CAF50" />

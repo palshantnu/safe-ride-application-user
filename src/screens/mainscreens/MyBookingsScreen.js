@@ -287,6 +287,11 @@ if (res?.status && Array.isArray(res.data)) {
           <View>
             <Text style={styles.tripId}>ID: {item.trip_id}</Text>
             <Text style={styles.bookingDate}>{bookingDate}</Text>
+            {(item.service_name || service_title) ? (
+              <Text style={{ fontSize: 13, fontWeight: '700', color: '#810a45', marginBottom: 6 }}>
+                Service: {(item.service_name || service_title)}
+              </Text>
+            ) : null}
           </View>
           <View
             style={[styles.statusBadge, { backgroundColor: statusColor }]}
