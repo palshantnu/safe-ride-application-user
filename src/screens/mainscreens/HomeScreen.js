@@ -876,6 +876,8 @@ const secureProfileImage = profileImageUri.replace('http://', 'https://');
 
       case 'SEARCHING':
       case 'TOKEN_PAID':
+      // BA flow: the BA has assigned a driver who hasn't arrived yet — keep Cancel available
+      case 'ASSIGN':
         return (
           <TouchableOpacity
             style={[styles.actionButton, styles.cancelButton]}
