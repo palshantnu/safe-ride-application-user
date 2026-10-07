@@ -338,6 +338,39 @@ if (res?.status && Array.isArray(res.data)) {
           </View>
         </View>
 
+        {/* Captain's vehicle */}
+        {item.vehicle_number || item.vehicle_type ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 }}>
+            <FontAwesome5 name="car-side" size={14} color="#666" />
+            <Text style={{ flex: 1, fontSize: 13, color: '#333', fontWeight: '500' }}>
+              {[[item?.vehicle_type, item?.vehicle_model].filter(Boolean).join(' '), item?.vehicle_color, item?.vehicle_number].filter(Boolean).join(' • ')}
+            </Text>
+          </View>
+        ) : null}
+
+        {/* Your rating & review (once rated) */}
+        {Number(item.user_rating) > 0 ? (
+          <View style={styles.ratingBox}>
+            <View style={styles.ratingBoxHeader}>
+              <Text style={styles.ratingBoxLabel}>Your Rating</Text>
+              <View style={styles.ratingBoxStars}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <FontAwesome5
+                  key={star}
+                  name="star"
+                  size={14}
+                  color={star <= Number(item.user_rating) ? '#FFB300' : '#E0E0E0'}
+                  solid
+                />
+              ))}
+              </View>
+            </View>
+            {item.user_review ? (
+              <Text style={styles.ratingBoxReview}>{item.user_review}</Text>
+            ) : null}
+          </View>
+        ) : null}
+
         {/* Driver Info */}
         {item.driver_name ? (
           <View style={styles.driverCard}>
@@ -762,6 +795,31 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FF1493',
     letterSpacing: 1,
+  },
+  ratingBox: {
+    marginTop: 10,
+    padding: 10,
+    borderRadius: 10,
+    backgroundColor: '#FFF8E1',
+  },
+  ratingBoxHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  ratingBoxLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#555',
+  },
+  ratingBoxStars: {
+    flexDirection: 'row',
+    gap: 3,
+  },
+  ratingBoxReview: {
+    marginTop: 6,
+    fontSize: 13,
+    color: '#333',
   },
   driverCard: {
     backgroundColor: '#F9F9F9',

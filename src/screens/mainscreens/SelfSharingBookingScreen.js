@@ -166,6 +166,7 @@ const SelfSharingBookingScreen = ({ navigation, route }) => {
     }
   };
 
+
   const totalTokenFare = parseFloat(trip.token_fare) * selectedSeats;
   const totalFullFare = parseFloat(trip.full_fare) * selectedSeats;
   const savings = totalFullFare - totalTokenFare;
@@ -264,6 +265,12 @@ const SelfSharingBookingScreen = ({ navigation, route }) => {
               <Text style={styles.driverRole}>
                 {trip.creator_type === 'DRIVER' ? 'Driver' : 'Agent'}
               </Text>
+              {trip.vehicle_number || trip.vehicle_type ? (
+                <Text style={[styles.driverRole, { marginTop: 4, color: '#333' }]}>
+                  <FontAwesome5 name="car-side" size={12} color="#666" />{'  '}
+                  {[[trip?.vehicle_type, trip?.vehicle_model].filter(Boolean).join(' '), trip?.vehicle_color, trip?.vehicle_number].filter(Boolean).join(' • ')}
+                </Text>
+              ) : null}
             </View>
             {/* <TouchableOpacity style={styles.callButton}>
               <FontAwesome5 name="phone" size={16} color="#FF1493" />
@@ -387,6 +394,10 @@ const SelfSharingBookingScreen = ({ navigation, route }) => {
             <Text style={styles.priceLabel}>Token Fare per Seat</Text>
             <Text style={styles.priceValue}>₹{trip.token_fare}</Text>
           </View>
+          <View style={styles.priceRow}>
+            <Text style={styles.priceLabel}>Full Fare per Seat</Text>
+            <Text style={styles.priceValue}>₹{trip.full_fare}</Text>
+          </View>
 
           <View style={styles.priceRow}>
             <Text style={styles.priceLabel}>Number of Seats</Text>
@@ -398,6 +409,10 @@ const SelfSharingBookingScreen = ({ navigation, route }) => {
           <View style={[styles.priceRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>Total Token Fare</Text>
             <Text style={styles.totalValue}>₹{totalTokenFare.toFixed(2)}</Text>
+          </View>
+          <View style={[styles.priceRow, styles.totalRow]}>
+            <Text style={styles.totalLabel}>Total Full Fare</Text>
+            <Text style={styles.totalValue}>₹{totalFullFare.toFixed(2)}</Text>
           </View>
 
           <View style={styles.savingsBox}>

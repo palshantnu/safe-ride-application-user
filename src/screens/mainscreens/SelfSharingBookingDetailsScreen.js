@@ -237,7 +237,72 @@ const SelfSharingBookingDetailsScreen = ({ route, navigation }) => {
             </View>
           </View>
         </View>
+     {/* Creator Info Card */}
+        {(booking.status != 'COMPLETED' && booking.status != 'CANCELLED') && <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Icon name="user" size={18} color="#FF1493" />
+            <Text style={styles.cardTitle}>Captain Details</Text>
+          </View>
 
+          <View style={styles.creatorInfoRow}>
+            <View style={styles.avatar}>
+              <FontAwesome5 name="user-tie" size={24} color="#FF1493" />
+            </View>
+            <View style={styles.creatorDetails}>
+              <Text style={styles.creatorName}>{booking.creator_name || 'Captain'}</Text>
+              <Text style={styles.creatorMobile}>{booking.creator_mobile || 'Contact not listed'}</Text>
+              {booking.vehicle_number || booking.vehicle_type ? (
+                <Text style={[styles.creatorMobile, { color: '#333' }]}>
+                  <FontAwesome5 name="car-side" size={12} color="#666" />{'  '}
+                  {[[booking?.vehicle_type, booking?.vehicle_model].filter(Boolean).join(' '), booking?.vehicle_color, booking?.vehicle_number].filter(Boolean).join(' • ')}
+                </Text>
+              ) : null}
+            </View>
+            {booking.creator_mobile ? (
+              <TouchableOpacity style={styles.callBtn} onPress={handleCallCreator}>
+                <Icon name="phone" size={18} color="#fff" />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        </View>}
+
+        {/* Trip ID / Booking ID details */}
+        <View style={styles.metaContainer}>
+          <Text style={styles.metaText}>Booking ID: {booking.booking_id}</Text>
+          <Text style={styles.metaText}>Trip ID: {booking.trip_id}</Text>
+          <Text style={styles.metaText}>Booked on: {new Date(booking.created_at).toLocaleString('en-IN')}</Text>
+        </View>
+
+        {/* Actions */}
+        {booking.trip_status === 'BOARDING' && booking.balance_amount && booking.balance_paid !== 1 && (
+          <TouchableOpacity
+            style={styles.payButton}
+            onPress={() => setShowPaymentModal(true)}
+            disabled={isPaymentProcessing}
+          >
+            <FontAwesome5 name="rupee-sign" size={16} color="#fff" />
+            <Text style={styles.payButtonText}>
+              Pay Balance ₹{booking.balance_amount}
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {canCancel && (
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={handleCancelBooking}
+            disabled={isCancelling}
+          >
+            {isCancelling ? (
+              <ActivityIndicator color="#F44336" size="small" />
+            ) : (
+              <>
+                <Icon name="x-circle" size={16} color="#F44336" />
+                <Text style={styles.cancelButtonText}>Cancel Booking</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
         {/* Cancellation Details Card */}
         {booking.status === 'CANCELLED' && (
           <View style={styles.card}>
@@ -261,6 +326,30 @@ const SelfSharingBookingDetailsScreen = ({ route, navigation }) => {
             </View>
           </View>
         )}
+
+        {/* Your rating & review (once rated) */}
+        {Number(booking.user_rating) > 0 ? (
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Icon name="star" size={18} color="#FFB300" />
+              <Text style={styles.cardTitle}>Your Rating</Text>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 4 }}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <FontAwesome5
+                  key={star}
+                  name="star"
+                  size={18}
+                  color={star <= Number(booking.user_rating) ? '#FFB300' : '#E0E0E0'}
+                  solid
+                />
+              ))}
+            </View>
+            {booking.user_review ? (
+              <Text style={{ marginTop: 8, fontSize: 13, color: '#333' }}>{booking.user_review}</Text>
+            ) : null}
+          </View>
+        ) : null}
 
         {/* OTP Prominent Box */}
         {booking.otp && booking.balance_paid === 1 && booking.status === 'CONFIRMED' ? (
@@ -338,7 +427,7 @@ const SelfSharingBookingDetailsScreen = ({ route, navigation }) => {
           <View style={styles.billRow}>
             <Text style={styles.billLabel}>Token Amount Paid</Text>
             <View style={styles.paymentStatusBadgeRow}>
-              <Text style={styles.billValue}>₹{booking.token_amount}</Text>
+              <Text style={styles.billValue}>{'  '}₹{booking.token_amount}</Text>
               {booking.token_paid === 1 ? (
                 <View style={styles.paidBadge}>
                   <Text style={styles.paidBadgeText}>PAID</Text>
@@ -354,7 +443,7 @@ const SelfSharingBookingDetailsScreen = ({ route, navigation }) => {
           <View style={styles.billRow}>
             <Text style={styles.billLabel}>Balance Amount</Text>
             <View style={styles.paymentStatusBadgeRow}>
-              <Text style={styles.billValue}>₹{booking.balance_amount}</Text>
+              <Text style={styles.billValue}>{'  '}₹{booking.balance_amount}</Text>
               {booking.balance_paid === 1 ? (
                 <View style={styles.paidBadge}>
                   <Text style={styles.paidBadgeText}>PAID</Text>
@@ -380,66 +469,7 @@ const SelfSharingBookingDetailsScreen = ({ route, navigation }) => {
           </View>
         </View>
 
-        {/* Creator Info Card */}
-        {(booking.status != 'COMPLETED' && booking.status != 'CANCELLED') && <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Icon name="user" size={18} color="#FF1493" />
-            <Text style={styles.cardTitle}>Captain Details</Text>
-          </View>
-
-          <View style={styles.creatorInfoRow}>
-            <View style={styles.avatar}>
-              <FontAwesome5 name="user-tie" size={24} color="#FF1493" />
-            </View>
-            <View style={styles.creatorDetails}>
-              <Text style={styles.creatorName}>{booking.creator_name || 'Captain'}</Text>
-              <Text style={styles.creatorMobile}>{booking.creator_mobile || 'Contact not listed'}</Text>
-            </View>
-            {booking.creator_mobile ? (
-              <TouchableOpacity style={styles.callBtn} onPress={handleCallCreator}>
-                <Icon name="phone" size={18} color="#fff" />
-              </TouchableOpacity>
-            ) : null}
-          </View>
-        </View>}
-
-        {/* Trip ID / Booking ID details */}
-        <View style={styles.metaContainer}>
-          <Text style={styles.metaText}>Booking ID: {booking.booking_id}</Text>
-          <Text style={styles.metaText}>Trip ID: {booking.trip_id}</Text>
-          <Text style={styles.metaText}>Booked on: {new Date(booking.created_at).toLocaleString('en-IN')}</Text>
-        </View>
-
-        {/* Actions */}
-        {booking.trip_status === 'BOARDING' && booking.balance_amount && booking.balance_paid !== 1 && (
-          <TouchableOpacity
-            style={styles.payButton}
-            onPress={() => setShowPaymentModal(true)}
-            disabled={isPaymentProcessing}
-          >
-            <FontAwesome5 name="rupee-sign" size={16} color="#fff" />
-            <Text style={styles.payButtonText}>
-              Pay Balance ₹{booking.balance_amount}
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        {canCancel && (
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={handleCancelBooking}
-            disabled={isCancelling}
-          >
-            {isCancelling ? (
-              <ActivityIndicator color="#F44336" size="small" />
-            ) : (
-              <>
-                <Icon name="x-circle" size={16} color="#F44336" />
-                <Text style={styles.cancelButtonText}>Cancel Booking</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        )}
+   
       </ScrollView>
 
       {/* Cancellation Reason Modal */}

@@ -283,11 +283,19 @@ const handleDateChange = (event, date) => {
           </Text>
         </View>
 
-        <View style={styles.driverInfo}>
+        <View style={[styles.driverInfo, { flexDirection: 'column' }]}>
           <View style={styles.driverDetail}>
             <FontAwesome5 name="user-circle" size={14} color="#FF1493" />
             <Text style={styles.driverName}>{item.creator_name}</Text>
           </View>
+          {item.vehicle_number || item.vehicle_type ? (
+            <View style={[styles.driverDetail, { marginTop: 4 }]}>
+              <FontAwesome5 name="car-side" size={13} color="#666" />
+              <Text style={[styles.driverName, { color: '#555', fontWeight: '500' }]}>
+                {[[item?.vehicle_type, item?.vehicle_model].filter(Boolean).join(' '), item?.vehicle_color, item?.vehicle_number].filter(Boolean).join(' • ')}
+              </Text>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.seatsAndFareSection}>
